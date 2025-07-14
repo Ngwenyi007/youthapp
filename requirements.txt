@@ -13,6 +13,7 @@ Flask==2.2.5
 Flask-SQLAlchemy==3.1.1
 getpass4==0.0.14.1
 greenlet==3.2.2
+gunicorn==23.0.0
 huggingface-hub==0.33.2
 idna==3.10
 itsdangerous==2.2.0
@@ -21,6 +22,7 @@ MarkupSafe==3.0.2
 meson==1.8.2
 nose==1.3.7
 numpy @ file:///home/builder/.termux-build/python-numpy/src/dist/numpy-2.2.5-cp312-cp312-linux_aarch64.whl#sha256=3e07e01553f84586072e530c91db94e54882af68f7792181856cc69bbe8381ee
+packaging==25.0
 passlib==1.7.4
 pillow==11.3.0
 pyperclip==1.9.0

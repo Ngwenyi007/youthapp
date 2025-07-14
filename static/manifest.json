@@ -1,10 +1,12 @@
 {
   "name": "Youth App",
-  "short_name": "YouthApp",
-  "start_url": "/dashboard",
+  "short_name": "Youth",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#004080",
+  "theme_color": "#003366",
+  "orientation": "portrait",
+  "description": "A youth registration and communication app",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
