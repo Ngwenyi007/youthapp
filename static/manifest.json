@@ -1,7 +1,7 @@
-A{
+{
   "name": "Youth App",
   "short_name": "YouthApp",
-  "description": "A youth registration and communication app for church members",
+  "description": "Youth registration and communication platform for all dioceses.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
