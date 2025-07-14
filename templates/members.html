@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Your content goes here -->
+    <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+
+<h2>Registered Youth in Your Area</h2>
+<table border="1">
+    <tr>
+        <th>Full Name</th>
+        <th>Username</th>
+        <th>Age</th>
+        <th>Level</th>
+        <th>Rank</th>
+        <th>pwd reset</th>
+    </tr>
+    {% for username, member in members.items() %}
+    <tr>
+        <td>{{ member.full_name }}</td>
+        <td>{{ username }}</td>
+        <td>{{ member.age }}</td>
+        <td>{{ member.level }}</td>
+        <td>{{ member.rank }}</td>
+               <td>
+    {% if 'chairman' in user.rank|lower %}
+  <ul>
+    {% for username, member in members.items() %}
+      <li>
+        <form method="POST" action="/reset_password/{{ username }}" style="display:inline;">
+        <td> <input type="text" name="new_password" placeholder="New password" required></td>
+        <td> <button type="submit">Reset</button></td>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+        </td>
+
+         </tr>
+    {% endfor %}
+</table>
+{% endblock %}

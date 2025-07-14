@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Your content goes here -->
+    <h2>Youth Registration Form</h2>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+        <label>Full Name:</label>
+        <input type="text" name="full_name" required><br>
+
+        <label>Age:</label>
+        <input type="number" name="age" required><br>
+
+        <label>Local Church:</label>
+        <input type="text" name="local_church" required><br>
+
+        <label>Parish:</label>
+        <input type="text" name="parish" required><br>
+
+        <label>Denary:</label>
+        <input type="text" name="denary" required><br>
+
+        <label>Diocese:</label>
+        <input type="text" name="diocese" required><br>
+
+        <label>Password:</label>
+        <input type="password" name="password" required><br>
+
+        <label>Level:</label>
+        <select name="level" id="level-select" required onchange="updateRanks()">
+            <option value="member">Youth Member</option>
+            <option value="local">Local Church Leader</option>
+            <option value="parish">Parish Leader</option>
+            <option value="denary">Denary Leader</option>
+            <option value="diocese">Diocese Leader</option>
+        </select><br>
+
+        <label>Rank:</label>
+        <select name="rank" id="rank-select" required>
+            <option value="Member">Member</option>
+        </select><br>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <p><a href="{{ url_for('login') }}">Already registered? Login here.</a></p>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+{% endblock %}

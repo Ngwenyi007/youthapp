@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Your content goes here -->
+    <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+    <h2>Add New Youth Member</h2>
+
+    <form method="post">
+        <label>Full Name:</label>
+        <input type="text" name="full_name" required>
+
+        <label>Age:</label>
+        <input type="number" name="age" required>
+
+        <label>Password:</label>
+        <input type="password" name="password" required>
+
+        <label>Level:</label>
+        <select name="level" required>
+            <option value="member">Member</option>
+            <option value="local">Local Leader</option>
+            <option value="parish">Parish Leader</option>
+            <option value="denary">Denary Leader</option>
+            <option value="diocese">Diocese Leader</option>
+        </select>
+
+        <label>Rank:</label>
+        <select name="rank" required>
+            <option value="Member">Member</option>
+            <option value="Chairman">Chairman</option>
+            <option value="Secretary">Secretary</option>
+            <option value="Treasurer">Treasurer</option>
+            <option value="Matron">Matron</option>
+            <option value="Patron">Patron</option>
+            <option value="Organising Secretary">Organising Secretary</option>
+            <option value="Chaplain">Chaplain</option>
+        </select>
+
+        <button type="submit">Register Member</button>
+    </form>
+
+{% endblock %}

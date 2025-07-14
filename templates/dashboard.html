@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Your content goes here -->
+  <h2>Welcome, {{ user.full_name }} ({{ user.rank }})</h2>
+
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>Welcome, {{ user.full_name }}</h2>
+    <div class="actions">
+      <button id="toggleMode">🌙 Light/Dark</button>
+      <form action="/logout" method="POST" style="display:inline;">
+        <button type="submit">🔓 Logout</button>
+      </form>
+      <button onclick="requestNotificationPermission()">🔔 Enable Notifications</button>
+    </div>
+  </div>
+
+  <h3>Members in Your Jurisdiction</h3>
+  <div class="members-grid">
+    {% for m in members %}
+      <div class="member-card">
+        <p><strong>{{ m.full_name }}</strong> ({{ m.rank }})</p>
+        <details>
+          <summary>View Details</summary>
+          <ul>
+            <li>Age: {{ m.age }}</li>
+            <li>Church: {{ m.local_church }}</li>
+            <li>Parish: {{ m.parish }}</li>
+            <li>Denary: {{ m.denary }}</li>
+            <li>Diocese: {{ m.diocese }}</li>
+          </ul>
+        </details>
+      </div>
+    {% endfor %}
+  </div>
+
+  <hr>
+
+  <h3>Post Something</h3>
+  <form action="/post" method="POST">
+    <textarea name="content" rows="3" required placeholder="Write your message..."></textarea>
+    <button type="submit">Post</button>
+  </form>
+
+  <h3>Posts</h3>
+  <div class="post-list">
+    {% for post in posts %}
+      <div class="post-card">
+        <p>{{ post.content }}</p>
+        <small>By {{ post.author }} — {{ post.timestamp|safe }}</small>
+        {% if post.comments %}
+          <details>
+            <summary>Comments ({{ post.comments|length }})</summary>
+            <ul>
+              {% for comment in post.comments %}
+                <li><strong>{{ comment.author }}:</strong> {{ comment.text }}</li>
+              {% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+        <form action="/comment/{{ post.id }}" method="POST">
+          <input name="comment" placeholder="Add comment..." required>
+          <button type="submit">Reply</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+
+  <!-- Search Bar -->
+  <form method="GET" action="/dashboard">
+    <input type="text" name="q" placeholder="Search posts..." value="{{ request.args.get('q', '') }}">
+    <button type="submit">Search</button>
+  </form>
+
+  <!-- Level Filter Buttons -->
+  <div class="btn-group">
+    {% for level in ['local_church', 'parish', 'denary', 'diocese'] %}
+      {% set value = user[level] %}
+      <form method="get" style="display:inline;">
+        <button type="submit" name="filter" value="{{ level }}"
+          class="{% if request.args.get('filter') == level %}highlight{% endif %}">
+          {{ level.replace('_', ' ').capitalize() }}: {{ value }}
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+
+  <!-- Add Post (Leaders Only) -->
+  {% if 'member' not in user.rank.lower() %}
+    <form method="POST" style="margin-top: 20px;">
+      <textarea name="content" placeholder="Write something..." required></textarea><br>
+      <button type="submit">Post</button>
+    </form>
+  {% endif %}
+
+  <!-- View Members & Add Member (Chairman Only) -->
+  {% if 'chairman' in user.rank.lower() %}
+    <div style="margin-top: 15px;">
+      <a href="{{ url_for('view_members') }}">View Members</a> |
+      <a href="{{ url_for('add_member') }}">Add Member</a>
+    </div>
+  {% endif %}
+
+  <hr>
+
+  <!-- Posts -->
+  {% for post in posts %}
+    <div class="post">
+      <div>
+        <strong>{{ post.author }}</strong> ({{ post.level or 'N/A' }}) - {{ post.time_ago }}
+        {% if post.pinned %}
+          <span style="color: green;">[Pinned]</span>
+        {% endif %}
+      </div>
+      <p>{{ post.content }}</p>
+
+      <!-- Post Controls -->
+      {% if user.username == post.username %}
+        <div class="controls">
+          <form method="POST" action="/edit_post/{{ post.id }}" style="display:inline;">
+            <input type="text" name="new_content" placeholder="Edit..." required>
+            <button type="submit">Edit</button>
+          </form>
+          <form method="POST" action="/delete_post/{{ post.id }}" style="display:inline;">
+            <button type="submit">Delete</button>
+          </form>
+          <form method="POST" action="/pin_post/{{ post.id }}" style="display:inline;">
+            <button type="submit">{{ 'Unpin' if post.pinned else 'Pin' }}</button>
+          </form>
+        </div>
+      {% endif %}
+
+      <!-- Comments -->
+      <div>
+        {% for comment in post.comments %}
+          <div class="comment">
+            {{ comment.author }}: {{ comment.text }} <small>({{ comment.timestamp | safe }})</small>
+          </div>
+        {% endfor %}
+        <!-- Add Comment -->
+        <form method="POST" action="/comment/{{ post.id }}">
+          <input type="text" name="comment" placeholder="Add comment..." required>
+          <button type="submit">Comment</button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}
