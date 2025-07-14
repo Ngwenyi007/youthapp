@@ -29,14 +29,19 @@
   </footer>
 
   <!-- Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
       navigator.serviceWorker.register('/static/service-worker.js')
-        .then(() => console.log("✅ Service Worker registered"))
-        .catch(err => console.log("❌ SW registration failed:", err));
-    }
-  </script>
-
+        .then(function (reg) {
+          console.log('Service worker registered:', reg.scope);
+        })
+        .catch(function (error) {
+          console.error('Service worker registration failed:', error);
+        });
+    });
+  }
+</script>
   <!-- JS -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
