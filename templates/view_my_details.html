@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+    }
+    
+    .profile-title {
+        font-size: 1.8rem;
+        margin: 0;
+        color: #333;
+    }
+    
+    .profile-section {
+        margin-bottom: 25px;
+    }
+    
+    .profile-section h3 {
+        color: #444;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .detail-row {
+        display: flex;
+        margin-bottom: 12px;
+    }
+    
+    .detail-label {
+        font-weight: bold;
+        width: 200px;
+        color: #555;
+    }
+    
+    .detail-value {
+        flex: 1;
+        color: #333;
+    }
+    
+    .btn-edit {
+        background-color: #ffc107;
+        color: black;
+        padding: 8px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-edit:hover {
+        background-color: #e0a800;
+    }
+    
+    .verification-badge {
+        background-color: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .detail-row {
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    }
+</style>
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h1 class="profile-title">
+            My Profile 
+            <span class="verification-badge">Verified Member</span>
+        </h1>
+        <a href="{{ url_for('edit_member', user_code=user.code) }}" class="btn-edit">
+            ✏️ Edit Profile
+        </a>
+    </div>
+    
+    <!-- Personal Information Section -->
+    <div class="profile-section">
+        <h3>👤 Personal Information</h3>
+        
+        <div class="detail-row">
+            <div class="detail-label">Full Name:</div>
+            <div class="detail-value">{{ user.fullname}}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Member Code:</div>
+            <div class="detail-value">{{ user.code }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Phone Number:</div>
+            <div class="detail-value">{{  user.phone}}</div>
+        </div>        
+        <div class="detail-row">
+            <div class="detail-label">Member Date Of Birth:</div>
+            <div class="detail-value">{{ user.dob }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Member Residence:</div>
+            <div class="detail-value">{{ user.residence }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Email Address:</div>
+            <div class="detail-value">{{ user.email }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Age:</div>
+            <div class="detail-value">{{ user.age }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Gender:</div>
+            <div class="detail-value">{{ user.gender }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Disability Status:</div>
+            <div class="detail-value">{{ user.disability }}</div>
+        </div>
+    </div>
+    
+    <!-- Church Role Information -->
+    <div class="profile-section">
+        <h3>⛪ Church Role & Position</h3>
+        
+        <div class="detail-row">
+            <div class="detail-label">Rank/Position:</div>
+            <div class="detail-value">{{ user.rank }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Role Level:</div>
+            <div class="detail-value">{{ user.role_level }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Specific Role:</div>
+            <div class="detail-value">{{ user.role }}</div>
+        </div>
+    </div>
+    
+    <!-- Jurisdiction Information -->
+    <div class="profile-section">
+        <h3>🏛️ Church Jurisdiction</h3>
+        
+        <div class="detail-row">
+            <div class="detail-label">Diocese:</div>
+            <div class="detail-value">{{ user.diocese }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Denary:</div>
+            <div class="detail-value">{{ user.denary }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Parish:</div>
+            <div class="detail-value">{{ user.parish }}</div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Local Church:</div>
+            <div class="detail-value">{{ user.local_church }}</div>
+        </div>
+    </div>
+    
+    <!-- Account Information -->
+    <div class="profile-section">
+        <h3>🔐 Account Information</h3>
+        
+        <div class="detail-row">
+            <div class="detail-label">Registration Date:</div>
+            <div class="detail-value">
+                {% if user.registration_date %}
+                    {{ user.registration_date.strftime('%B %d, %Y') }}
+                {% else %}
+                    Not recorded
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Last Login:</div>
+            <div class="detail-value">
+                {% if user.last_login %}
+                    {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
+                {% else %}
+                    Never logged in
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="detail-row">
+            <div class="detail-label">Account Status:</div>
+            <div class="detail-value">Active ✅</div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="profile-actions" style="margin-top: 30px; display: flex; gap: 10px;">
+        <a href="{{ url_for('change_password') }}" class="btn-edit">
+            🔒 Change Password
+        </a>
+        
+        <form action="{{ url_for('update_profile') }}" method="POST" style="display: inline;">
+            <button type="submit" class="btn-edit">
+                ✉️ Request Profile Update
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Apply dark mode if enabled
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    });
+</script>
+{% endblock %}

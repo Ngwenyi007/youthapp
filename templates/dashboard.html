@@ -1,151 +1,430 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block content %}
-  <!-- Your content goes here -->
-  <h2>Welcome, {{ user.full_name }} ({{ user.rank }})</h2>
+<style>
+:root {
+  --bg: #f0f0f0;
+  --text: #111;
+  --card: #fff;
+  --accent: #0077cc;
+  --pinned: #ffeb3b;
+}
 
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h2>Welcome, {{ user.full_name }}</h2>
-    <div class="actions">
-      <button id="toggleMode">🌙 Light/Dark</button>
-      <form action="/logout" method="POST" style="display:inline;">
-        <button type="submit">🔓 Logout</button>
-      </form>
-      <button onclick="requestNotificationPermission()">🔔 Enable Notifications</button>
-    </div>
-  </div>
+body.dark-mode {
+  --bg: #121212;
+  --text: #f0f0f0;
+  --card: #1f1f1f;
+  --accent: #1e88e5;
+  --pinned: #ffee58;
+}
 
-  <h3>Members in Your Jurisdiction</h3>
-  <div class="members-grid">
-    {% for m in members %}
-      <div class="member-card">
-        <p><strong>{{ m.full_name }}</strong> ({{ m.rank }})</p>
-        <details>
-          <summary>View Details</summary>
-          <ul>
-            <li>Age: {{ m.age }}</li>
-            <li>Church: {{ m.local_church }}</li>
-            <li>Parish: {{ m.parish }}</li>
-            <li>Denary: {{ m.denary }}</li>
-            <li>Diocese: {{ m.diocese }}</li>
-          </ul>
-        </details>
-      </div>
-    {% endfor %}
-  </div>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
 
-  <hr>
+/* Header */
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--accent);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
 
-  <h3>Post Something</h3>
-  <form action="/post" method="POST">
-    <textarea name="content" rows="3" required placeholder="Write your message..."></textarea>
-    <button type="submit">Post</button>
+.top-header h2 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.top-header button {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: white;
+}
+.hidden {
+  display: none;
+}
+.footer-buttons button.active {
+  background-color: #444;
+  color: white;
+}
+.footer-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #f8f8f8;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+  z-index: 1000;
+}
+
+.footer-buttons button,
+.footer-buttons a {
+  padding: 10px;
+  background: #ddd;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.footer-buttons .new-post-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.modal {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  background-color: white;
+  padding: 20px;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 20% auto;
+  padding: 20px;
+  border-radius: 12px;
+  width: 80%;
+  text-align: center;
+}
+
+.modal-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.modal-content ul li {
+  margin: 10px 0;
+}
+
+.modal-content ul li a {
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.close {
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+/* Search Section */
+.search-section {
+  padding: 1rem;
+  background: var(--card);
+}
+
+.search-section input {
+  width: 100%;
+  padding: 0.7rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* Posts */
+main {
+  padding: 1rem;
+}
+
+.post-card {
+  background: var(--card);
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.post-card.pinned {
+  border-left: 5px solid var(--pinned);
+}
+
+.post-card h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.post-actions {
+  margin-top: 0.5rem;
+}
+
+.post-actions a {
+  margin-right: 1rem;
+  text-decoration: none;
+  color: var(--accent);
+}
+
+details summary {
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.modal {
+  position: fixed;
+  bottom: 60px; /* juu kidogo ya footer */
+  left: 0;
+  right: 0;
+  background-color: white;
+  padding: 20px;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.close-btn {
+  float: right;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+
+.btn-level {
+  background-color: #eef;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.btn-level:hover {
+  background-color: # ooffoo;
+}
+
+.btn-level.active {
+  background-color: #3366ff;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 0 5px #3366ff;
+}
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: var(--card);
+  display: flex;
+  justify-content: space-around;
+  padding: 0.6rem 0;
+  border-top: 1px solid #ccc;
+  z-index: 999;
+}
+
+.bottom-nav button,
+.bottom-nav a {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.new-post-btn {
+  background: var(--accent);
+  color: white;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode .search-section input {
+  background: #2c2c2c;
+  border: 1px solid #444;
+  color: white;
+}
+
+body.dark-mode .modal-content {
+  background: #2a2a2a;
+}
+
+body.dark-mode .bottom-nav {
+  background: #1a1a1a;
+  border-top: 1px solid #444;
+}
+</style>
+    <!-- Header and Menu -->
+    <header class="top-header">
+      <h2>Welcome, {{ user.full_name }}</h2>
+        <button onclick="toggleMenu()">☰</button>
+    </header>
+<!-- CHURCH LEVEL BUTTONS AT THE TOP -->
+<!-- Sticky Top Filter: Church Level -->
+<div style="position: sticky; top: 0; background: white; z-index: 1000; padding: 10px; border-bottom: 1px solid #ccc;">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+    <input type="hidden" name="filter_department" value="{{ filter_department }}">
+    {% set level_style = "background-color: #007bff; color: white;" %}
+    <button type="submit" name="filter_level" value="all"
+      style="padding: 6px 10px; border-radius: 6px; border: none; {% if filter_level == 'all' %}{{ level_style }}{% endif %}">
+      🌍 All
+    </button>
+    <button type="submit" name="filter_level" value="local_church"
+      style="padding: 6px 10px; border-radius: 6px; border: none; {% if filter_level == 'local_church' %}{{ level_style }}{% endif %}">
+      ⛪ Local
+    </button>
+    <button type="submit" name="filter_level" value="parish"
+      style="padding: 6px 10px; border-radius: 6px; border: none; {% if filter_level == 'parish' %}{{ level_style }}{% endif %}">
+      📍 Parish
+    </button>
+    <button type="submit" name="filter_level" value="denary"
+      style="padding: 6px 10px; border-radius: 6px; border: none; {% if filter_level == 'denary' %}{{ level_style }}{% endif %}">
+      🗺️ Denary
+    </button>
+    <button type="submit" name="filter_level" value="diocese"
+      style="padding: 6px 10px; border-radius: 6px; border: none; {% if filter_level == 'diocese' %}{{ level_style }}{% endif %}">
+      🏛️ Diocese
+    </button>
   </form>
-
-  <h3>Posts</h3>
-  <div class="post-list">
-    {% for post in posts %}
-      <div class="post-card">
-        <p>{{ post.content }}</p>
-        <small>By {{ post.author }} — {{ post.timestamp|safe }}</small>
-        {% if post.comments %}
-          <details>
-            <summary>Comments ({{ post.comments|length }})</summary>
-            <ul>
-              {% for comment in post.comments %}
-                <li><strong>{{ comment.author }}:</strong> {{ comment.text }}</li>
-              {% endfor %}
-            </ul>
-          </details>
-        {% endif %}
-        <form action="/comment/{{ post.id }}" method="POST">
-          <input name="comment" placeholder="Add comment..." required>
-          <button type="submit">Reply</button>
-        </form>
-      </div>
-    {% endfor %}
-  </div>
 </div>
+<!-- Your main content comes here: posts, members, etc. -->
 
+<!-- Search & Filter -->
+<section class="search-section" style="text-align: center; margin-bottom: 15px;">
+  <input type="text" id="searchInput" placeholder="🔍 Search posts..." onkeyup="filterPosts()" style="padding: 8px; width: 90%; max-width: 500px; border-radius: 5px; border: 1px solid #ccc;">
+</section>
 
+    <!-- Posts Section -->
+    <main>
+{% for post in posts %}
+  <div class="post-card" style="border: 1px solid #ccc; border-radius: 10px; padding: 15px; margin-bottom: 15px; background: #f9f9f9;">
+    
+    <!-- Post Meta -->
+    <div style="font-size: 14px; color: #666;">
+      🧑‍💼 <strong>{{ post.poster_name }}</strong>
+      from <strong>{{ post.level|capitalize }}</strong>
+      <span style="font-style: italic;">{{ post.department|capitalize }} Dept</span>
+      <span style="float:right;">🕒 {{ time_since(post.timestamp) }}</span>
+    </div>
 
-  <!-- Search Bar -->
-  <form method="GET" action="/dashboard">
-    <input type="text" name="q" placeholder="Search posts..." value="{{ request.args.get('q', '') }}">
-    <button type="submit">Search</button>
-  </form>
+    <!-- Post Title -->
+    <h3 style="margin: 10px 0;">📌 {{ post.title }}</h3>
 
-  <!-- Level Filter Buttons -->
-  <div class="btn-group">
-    {% for level in ['local_church', 'parish', 'denary', 'diocese'] %}
-      {% set value = user[level] %}
-      <form method="get" style="display:inline;">
-        <button type="submit" name="filter" value="{{ level }}"
-          class="{% if request.args.get('filter') == level %}highlight{% endif %}">
-          {{ level.replace('_', ' ').capitalize() }}: {{ value }}
-        </button>
-      </form>
-    {% endfor %}
+    <!-- Post Content -->
+    <p style="margin: 10px 0;">{{ post.content }}</p>
+
+    <!-- Post Actions -->
+    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+      <a href="{{ url_for('view_post', post_id=post.id) }}">💬 View / Comment</a>
+    </div>
+
   </div>
+{% else %}
+  <p style="text-align:center; color: gray;">No posts to display.</p>
+{% endfor %}
+    </main>
 
-  <!-- Add Post (Leaders Only) -->
-  {% if 'member' not in user.rank.lower() %}
-    <form method="POST" style="margin-top: 20px;">
-      <textarea name="content" placeholder="Write something..." required></textarea><br>
-      <button type="submit">Post</button>
-    </form>
-  {% endif %}
+<footer class="bottom-nav">
+ 
+<!-- Sticky Bottom Filter: Department -->
 
-  <!-- View Members & Add Member (Chairman Only) -->
-  {% if 'chairman' in user.rank.lower() %}
-    <div style="margin-top: 15px;">
-      <a href="{{ url_for('view_members') }}">View Members</a> |
-      <a href="{{ url_for('add_member') }}">Add Member</a>
+<!-- Department Buttons -->
+<div style="position: sticky; bottom: 0; background: #fff; z-index: 1000; padding: 8px; border-top: 1px solid #ccc;">
+  <form method="get" style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
+    <input type="hidden" name="filter_level" value="{{ filter_level }}">
+    {% set active = "background-color:#28a745; color:white;" %}
+    <button type="submit" name="filter_department" value="chaplaincy" style="border:none; padding:5px 10px; border-radius:5px; {% if filter_department == 'chaplaincy' %}{{ active }}{% endif %}">⛪ Chaplaincy</button>
+    <button type="submit" name="filter_department" value="secretariat" style="border:none; padding:5px 10px; border-radius:5px; {% if filter_department == 'secretariat' %}{{ active }}{% endif %}">🖋️ Secretariat</button>
+    <button type="submit" name="filter_department" value="treasury" style="border:none; padding:5px 10px; border-radius:5px; {% if filter_department == 'treasury' %}{{ active }}{% endif %}">💰 Treasury</button>
+  </form>
+</div>
+    {% if 'chairman' in user.rank or
+          'secretary' in user.rank or
+          'chaplain' in user.rank or
+          'organising secretary' in user.rank or
+          'patron' in user.rank or
+          'treasurer' in user.rank or
+          'matron' in user.rank %}
+      <a href="{{ url_for('create_post') }}" class="new-post-btn">➕ New Post</a>
+    {% endif %}
+
+    <button onclick="toggleMenu()">☰</button>
+  </div>
+{% if 'chairman' in user.rank.lower() %}
+  <div class="my-4">
+    <a href="{{ url_for('chairman_dashboard') }}" class="button is-warning is-fullwidth has-text-weight-bold">
+      📊 Manage Members
+    </a>
+  </div>
+{% endif %}
+  <!-- Menu Modal -->
+  <div id="menuModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="toggleMenu()">&times;</span>
+      <ul>
+        <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+        <li><a href="{{ url_for('view_my_details') }}">📝 My Profile</a></li>
+        <li><button onclick="toggleTheme()">🌓 Light/Dark Mode</button></li>
+        <li><button onclick="enableNotifications()">🔔 Notifications</button></li>
+        <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
+      </ul>
     </div>
-  {% endif %}
+  </div>
+</footer>
+<script>
+  function toggleMenu() {
+    document.getElementById('menuModal').classList.toggle('hidden');
+  }
 
-  <hr>
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+  }
 
-  <!-- Posts -->
-  {% for post in posts %}
-    <div class="post">
-      <div>
-        <strong>{{ post.author }}</strong> ({{ post.level or 'N/A' }}) - {{ post.time_ago }}
-        {% if post.pinned %}
-          <span style="color: green;">[Pinned]</span>
-        {% endif %}
-      </div>
-      <p>{{ post.content }}</p>
+  function enableNotifications() {
+    alert("🔔 Notifications enabled!");
+  }
 
-      <!-- Post Controls -->
-      {% if user.username == post.username %}
-        <div class="controls">
-          <form method="POST" action="/edit_post/{{ post.id }}" style="display:inline;">
-            <input type="text" name="new_content" placeholder="Edit..." required>
-            <button type="submit">Edit</button>
-          </form>
-          <form method="POST" action="/delete_post/{{ post.id }}" style="display:inline;">
-            <button type="submit">Delete</button>
-          </form>
-          <form method="POST" action="/pin_post/{{ post.id }}" style="display:inline;">
-            <button type="submit">{{ 'Unpin' if post.pinned else 'Pin' }}</button>
-          </form>
-        </div>
-      {% endif %}
+  function filterByDepartment(dept) {
+    // Highlight active department
+    document.querySelectorAll('.dept-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
 
-      <!-- Comments -->
-      <div>
-        {% for comment in post.comments %}
-          <div class="comment">
-            {{ comment.author }}: {{ comment.text }} <small>({{ comment.timestamp | safe }})</small>
-          </div>
-        {% endfor %}
-        <!-- Add Comment -->
-        <form method="POST" action="/comment/{{ post.id }}">
-          <input type="text" name="comment" placeholder="Add comment..." required>
-          <button type="submit">Comment</button>
-        </form>
-      </div>
-    </div>
-  {% endfor %}
+    // Filter post cards
+    const cards = document.querySelectorAll(".post-card");
+    cards.forEach(card => {
+      card.style.display = card.innerText.includes(dept) ? "block" : "none";
+    });
+
+    // Funga menu ukifilter kupitia menu
+    document.getElementById('menuModal').classList.add('hidden');
+  }
+
+  function filterPosts() {
+    const term = document.getElementById("searchInput").value.toLowerCase();
+    const posts = document.querySelectorAll(".post-card");
+    posts.forEach(p => {
+      p.style.display = p.innerText.toLowerCase().includes(term) ? "block" : "none";
+    });
+  }
+</script>
 {% endblock %}

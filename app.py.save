@@ -1,0 +1,664 @@
+# app.py
+
+import uuid
+from datetime import datetime
+import json
+import os
+# REMOVE THIS LINE: from models import User # No longer using a SQLAlchemy model for User here
+# REMOVE THIS LINE: from your_db_module import db # No longer using a database 'db' object here
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+
+# --- Configuration and Helper Functions ---
+USERS_FILE = 'users.json'
+POST_FILE = 'posts.json'
+
+def time_since(dt):
+    now = datetime.utcnow()
+    diff = now - dt
+    seconds = diff.total_seconds()
+    minutes = int(seconds / 60)
+    hours = int(minutes / 60)
+    days = int(hours / 24)
+
+    if seconds < 60:
+        return "just now"
+    elif minutes < 60:
+        return f"{minutes} minutes ago"
+    elif hours < 24:
+        return f"{hours} hours ago"
+    elif days < 7:
+        return f"{days} days ago"
+    else:
+        return dt.strftime('%b %d, %Y')
+
+def load_json(filename):
+    if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+        return []
+    try:
+        with open(filename, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print(f"Warning: Could not decode JSON from {filename}. Returning empty list.")
+        return []
+
+def save_json(filename, data):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
+
+# Load existing users and posts at the application start
+users_data = load_json(USERS_FILE)
+posts = load_json(POST_FILE)
+
+def get_user_highest_jurisdiction_level(user_rank_str):
+    """Determines the single highest jurisdiction level a user's rank allows them to post to."""
+    rank_lower = user_rank_str.lower()
+    if 'diocese' in rank_lower:
+        return 'diocese'
+    elif 'denary' in rank_lower:
+        return 'denary'
+    elif 'parish' in rank_lower:
+        return 'parish'
+    elif 'local church' in rank_lower or 'local_church' in rank_lower:
+        return 'local_church'
+    return 'member'
+
+POST_SCOPE_ORDER = {
+    'local_church': 0,
+    'parish': 1,
+    'denary': 2,
+    'diocese': 3
+}
+
+def is_visible_by_hierarchy(post, user):
+    user_diocese = user.get('diocese')
+    user_denary = user.get('denary')
+    user_parish = user.get('parish')
+    user_local_church = user.get('local_church')
+
+    post_diocese = post.get('diocese')
+    post_denary = post.get('denary')
+    post_parish = post.get('parish')
+    post_local_church = post.get('local_church')
+    post_scope = post.get('post_scope')
+
+    if not post_scope:
+        return (user_diocese == post_diocese and
+                user_denary == post_denary and
+                user_parish == post_parish and
+                user_local_church == post_local_church)
+
+    if post_scope == 'diocese':
+        return user_diocese == post_diocese
+    elif post_scope == 'denary':
+        return user_diocese == post_diocese and user_denary == post_denary
+    elif post_scope == 'parish':
+        return user_diocese == post_diocese and user_denary == post_denary and user_parish == post_parish
+    elif post_scope == 'local_church':
+        return user_diocese == post_diocese and user_denary == post_denary and user_parish == post_parish and user_local_church == post_local_church
+    return False
+
+# --- Flask Application Setup ---
+app = Flask(__name__)
+app.secret_key = 'super_secret_unsecure_key_for_testing_only_123'
+
+# --- Context Processors ---
+@app.context_processor
+def inject_current_time():
+    current_utc = datetime.utcnow()
+    return {
+        'current_utc_datetime': current_utc,
+        'current_utc_year': current_utc.year
+    }
+
+# --- Routes ---
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = next((u for u in users_data if u['username'] == username and u['password'] == password), None)
+
+        if user:
+            session['username'] = username
+            flash(f"Welcome, {user['full_name']}!")
+            return redirect(url_for('dashboard'))
+        else:
+            flash("Invalid credentials. Please try again.")
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST': 
+        email = request.form.get('email') # Make sure your registration.html has an 'email' field
+        password = request.form.get('password')
+        full_name = request.form.get('full_name')
+        rank = request.form.get('rank')
+        # Add geographical data from the form
+        diocese = request.form.get('diocese', '')
+        denary = request.form.get('denary', '')
+        parish = request.form.get('parish', '')
+        local_church = request.form.get('local_church', '')
+
+        # Basic validation (add more as needed)
+        if not email or not password or not full_name or not rank:
+            flash('All required fields must be filled.', 'danger')
+            return render_template('register.html', form_data=request.form)
+
+        # Check if email already exists
+        if any(u['email'] == email for u in users_data):
+            flash('Email already registered. Please login.', 'warning')
+            return render_template('register.html', form_data=request.form)
+
+        # Generate the unique username
+        system_generated_username = generate_unique_username()
+
+        # Create the new user dictionary (NOT a User class instance)
+        new_user = {
+            "id": str(uuid.uuid4()), # Assign a unique ID to the user entry
+            "username": system_generated_username, # Assign the generated username
+            "email": email,
+            "password": password, # IMPORTANT: Hash passwords in a real application!
+            "full_name": full_name,
+            "rank": rank,
+            "diocese": diocese,
+            "denary": denary,
+            "parish": parish,
+            "local_church": local_church
+        }
+
+        try:
+            # Add the new user to your in-memory list
+            users_data.append(new_user)
+            # Save the updated list back to the JSON file
+            save_json(USERS_FILE, users_data)
+
+            # Log the user in by setting their username in the session
+            session['username'] = new_user['username']
+            flash('Registration successful! Welcome to the dashboard.', 'success')
+
+            # Render dashboard.html directly, passing the new_user dictionary
+            return render_template('dashboard.html', user=new_user)
+
+
+    return render_template('register.html')
+
+# Ensure this function exists and generates a unique code
+def generate_unique_username():
+    return str(uuid.uuid4()) # Example: using UUIDs for uniqueness
+
+@app.route('/dashboard', methods=['GET', 'POST'])
+def dashboard():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None) # Clear invalid session
+        return redirect(url_for('login'))
+
+    # Handle Post Submission
+    if request.method == 'POST' and 'content' in request.form:
+        if 'member' not in user['rank'].lower(): # Only leaders can create posts
+            content = request.form['content']
+            post_scope = request.form.get('post_scope', '') # Get chosen scope from form
+
+            # --- STRICT SERVER-SIDE VALIDATION FOR POSTING SCOPE ---
+            user_highest_allowed_scope = get_user_highest_jurisdiction_level(user['rank'])
+
+            if post_scope != user_highest_allowed_scope:
+                flash(f"Error: As a '{user['rank']}', you can only post to the '{user_highest_allowed_scope.replace('_', ' ').capitalize()}' level.")
+                return redirect('/dashboard')
+            # --- END STRICT VALIDATION ---
+
+            # Adjust geographical fields in the post based on the (now strictly validated) post_scope
+            post_diocese = user['diocese']
+            post_denary = user['denary']
+            post_parish = user['parish']
+            post_local_church = user['local_church']
+
+            if post_scope == 'diocese':
+                post_denary = ''
+                post_parish = ''
+                post_local_church = ''
+            elif post_scope == 'denary':
+                post_parish = ''
+                post_local_church = ''
+            elif post_scope == 'parish':
+                post_local_church = ''
+
+            post = {
+                "id": str(uuid.uuid4()),
+                "author": user['full_name'],
+                "username": user['username'], # Add username to post for easier edit/delete checks
+                "content": content,
+                "timestamp": datetime.now().isoformat(),
+                "pinned": False,
+                "diocese": post_diocese,
+                "denary": post_denary,
+                "parish": post_parish,
+                "local_church": post_local_church,
+                "rank": user['rank'],
+                "post_scope": post_scope
+            }
+            posts.insert(0, post) # Add post to the beginning of the list
+            save_json(POST_FILE, posts)
+            flash("Post created successfully!")
+            return redirect('/dashboard')
+        else:
+            flash("You do not have permission to create posts.")
+            return redirect('/dashboard')
+
+    # --- GET request logic for displaying posts and members ---
+    filtered_posts = []
+
+    current_filter = request.args.get('filter', 'all')
+    search_query = request.args.get('q', '').lower()
+
+    for post in posts:
+        if is_visible_by_hierarchy(post, user):
+            post_matches_button_filter = False
+            if current_filter == 'all':
+                post_matches_button_filter = True
+            elif post.get('post_scope') == current_filter:
+                if current_filter == 'diocese' and post.get('diocese') == user.get('diocese'):
+                    post_matches_button_filter = True
+                elif current_filter == 'denary' and post.get('diocese') == user.get('diocese') and post.get('denary') == user.get('denary'):
+                    post_matches_button_filter = True
+                elif current_filter == 'parish' and post.get('diocese') == user.get('diocese') and post.get('denary') == user.get('denary') and post.get('parish') == user.get('parish'):
+                    post_matches_button_filter = True
+                elif current_filter == 'local_church' and post.get('diocese') == user.get('diocese') and post.get('denary') == user.get('denary') and post.get('parish') == user.get('parish') and post.get('local_church') == user.get('local_church'):
+                    post_matches_button_filter = True
+
+            if post_matches_button_filter:
+                if search_query in post['content'].lower() or \
+                   search_query in post['author'].lower() or \
+                   search_query in post['rank'].lower():
+                    filtered_posts.append(post)
+
+    filtered_posts.sort(key=lambda x: (not x.get('pinned', False), datetime.fromisoformat(x['timestamp'])), reverse=True)
+
+    for post in filtered_posts:
+        if 'timestamp' in post and post['timestamp']:
+            try:
+                post_time = datetime.fromisoformat(post['timestamp'])
+                time_diff = datetime.now() - post_time
+                seconds = int(time_diff.total_seconds())
+
+                if seconds < 60:
+                    post['time_ago'] = f"{seconds} seconds ago"
+                elif seconds < 3600:
+                    post['time_ago'] = f"{seconds // 60} minutes ago"
+                elif seconds < 86400:
+                    post['time_ago'] = f"{seconds // 3600} hours ago"
+                elif seconds < 604800: # 7 days
+                    post['time_ago'] = f"{seconds // 86400} days ago"
+                else:
+                    post['time_ago'] = post_time.strftime('%Y-%m-%d %H:%M')
+            except ValueError:
+                post['time_ago'] = "Invalid Date"
+        else:
+            post['time_ago'] = "N/A"
+
+    members_in_jurisdiction = {}
+    if 'member' not in user['rank'].lower():
+        for member_user in users_data:
+            if is_visible_by_hierarchy(member_user, user):
+                members_in_jurisdiction[member_user['username']] = member_user
+
+    return render_template('dashboard.html', user=user, posts=filtered_posts, members=members_in_jurisdiction,
+                           current_filter=current_filter, search_query=search_query)
+
+
+
+
+@app.route('/edit_post/<post_id>', methods=['POST'])
+def edit_post(post_id):
+    if 'username' not in session:
+        flash("You must be logged in to edit posts.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    post_to_edit = next((p for p in posts if p['id'] == post_id), None)
+
+    if not post_to_edit:
+        flash("Post not found.")
+        return redirect(url_for('dashboard'))
+
+    # Only the author can edit their post
+    if post_to_edit['username'] != username:
+        flash("You are not authorized to edit this post.")
+        return redirect(url_for('dashboard'))
+
+    new_content = request.form['new_content']
+    post_to_edit['content'] = new_content
+    post_to_edit['timestamp'] = datetime.now().isoformat() # Update timestamp on edit
+    save_json(POST_FILE, posts)
+    flash("Post updated successfully!")
+    return redirect(url_for('dashboard'))
+
+# --- Corrected delete_post function ---
+@app.route('/delete_post/<post_id>', methods=['POST'])
+def delete_post(post_id):
+    global posts # <--- MOVE THIS LINE TO THE TOP OF THE FUNCTION
+
+    if 'username' not in session:
+        flash("You must be logged in to delete posts.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    post_to_delete = next((p for p in posts if p['id'] == post_id), None)
+
+    if not post_to_delete:
+        flash("Post not found.")
+        return redirect(url_for('dashboard'))
+
+    # Only the author can delete their post
+    if post_to_delete['username'] != username:
+        flash("You are not authorized to delete this post.")
+        return redirect(url_for('dashboard'))
+
+    posts = [p for p in posts if p['id'] != post_id]
+    save_json(POST_FILE, posts)
+    flash("Post deleted successfully!")
+    return redirect(url_for('dashboard'))
+
+
+
+@app.route('/pin_post/<post_id>', methods=['POST'])
+def pin_post(post_id):
+    if 'username' not in session:
+        flash("You must be logged in to pin posts.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    post_to_pin = next((p for p in posts if p['id'] == post_id), None)
+
+    if not post_to_pin:
+        flash("Post not found.")
+        return redirect(url_for('dashboard'))
+
+    # Only the author can pin their post (or potentially higher-level admins)
+    # For now, let's keep it to author only for simplicity.
+    if post_to_pin['username'] != username:
+        flash("You are not authorized to pin/unpin this post.")
+        return redirect(url_for('dashboard'))
+
+    post_to_pin['pinned'] = not post_to_pin.get('pinned', False) # Toggle pin status
+    save_json(POST_FILE, posts)
+    flash("Post pin status updated!")
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/comment/<post_id>', methods=['POST'])
+def comment(post_id):
+    if 'username' not in session:
+        flash("You must be logged in to comment.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    comment_text = request.form.get('comment')
+    if not comment_text:
+        flash("Comment cannot be empty.")
+        return redirect(url_for('dashboard'))
+
+    post_to_comment = next((p for p in posts if p['id'] == post_id), None)
+
+    if not post_to_comment:
+        flash("Post not found.")
+        return redirect(url_for('dashboard'))
+
+    # Check if the user can view the post before allowing comment
+    if not is_visible_by_hierarchy(post_to_comment, user):
+        flash("You cannot comment on posts you cannot view.")
+        return redirect(url_for('dashboard'))
+
+    new_comment = {
+        "author": user['full_name'],
+        "username": username,
+        "text": comment_text,
+        "timestamp": datetime.now().isoformat()
+    }
+
+    if 'comments' not in post_to_comment:
+        post_to_comment['comments'] = []
+    post_to_comment['comments'].append(new_comment)
+    save_json(POST_FILE, posts)
+    flash("Comment added successfully!")
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/view_members')
+def view_members():
+    if 'username' not in session:
+        flash("You must be logged in to view members.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    # Only Chairman (Diocese leader) or those with specific member management roles
+    # should access this. For simplicity, checking for 'chairman' rank.
+    if 'chairman' not in user['rank'].lower():
+        flash("You do not have permission to view this page.")
+        return redirect(url_for('dashboard'))
+
+    # Filter members to only show those within the Chairman's Diocese
+    diocese_members = [
+        m for m in users_data if m.get('diocese') == user.get('diocese')
+    ]
+
+    return render_template('view_members.html', members=diocese_members, user=user)
+
+
+@app.route('/add_member', methods=['GET', 'POST'])
+def add_member():
+    if 'username' not in session:
+        flash("You must be logged in to add members.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    # Only Chairman (Diocese leader) or authorized roles can add members
+    if 'chairman' not in user['rank'].lower():
+        flash("You do not have permission to add members.")
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        new_member_full_name = request.form['full_name']
+        new_member_username = request.form['username']
+        new_member_password = request.form['password']
+        new_member_rank = request.form['rank']
+        new_member_age = request.form['age']
+        
+        # Geographical data for the new member
+        new_member_diocese = request.form.get('diocese', '')
+        new_member_denary = request.form.get('denary', '')
+        new_member_parish = request.form.get('parish', '')
+        new_member_local_church = request.form.get('local_church', '')
+
+        # Validation: Check if username already exists
+        if any(u['username'] == new_member_username for u in users_data):
+            flash("Username already exists. Please choose a different one for the new member.")
+            return render_template('add_member.html', form_data=request.form, user=user)
+
+        # Validation: Ensure new member is within the chairman's diocese
+        if new_member_diocese != user['diocese']:
+            flash(f"Error: You can only add members to your diocese: {user['diocese']}")
+            return render_template('add_member.html', form_data=request.form, user=user)
+
+        new_member = {
+            "id": str(uuid.uuid4()),
+            "full_name": new_member_full_name,
+            "username": new_member_username,
+            "password": new_member_password, # Hash in production!
+            "rank": new_member_rank,
+            "age": new_member_age,
+            "diocese": new_member_diocese,
+            "denary": new_member_denary,
+            "parish": new_member_parish,
+            "local_church": new_member_local_church
+        }
+        users_data.append(new_member)
+        save_json(USERS_FILE, users_data)
+        flash(f"Member '{new_member_full_name}' added successfully!")
+        return redirect(url_for('view_members'))
+
+    # Pass current user's diocese to the form for pre-filling/validation
+    return render_template('add_member.html', user=user)
+
+
+@app.route('/edit_member/<member_username>', methods=['GET', 'POST'])
+def edit_member(member_username):
+    if 'username' not in session:
+        flash("You must be logged in to edit members.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    # Only Chairman (Diocese leader) can edit members
+    if 'chairman' not in user['rank'].lower():
+        flash("You do not have permission to edit members.")
+        return redirect(url_for('dashboard'))
+
+    member_to_edit = next((m for m in users_data if m['username'] == member_username), None)
+
+    if not member_to_edit:
+        flash("Member not found.")
+        return redirect(url_for('view_members'))
+    
+    # Ensure chairman can only edit members within their diocese
+    if member_to_edit.get('diocese') != user.get('diocese'):
+        flash("You can only edit members within your diocese.")
+        return redirect(url_for('view_members'))
+
+    if request.method == 'POST':
+        member_to_edit['full_name'] = request.form['full_name']
+        member_to_edit['rank'] = request.form['rank']
+        member_to_edit['age'] = request.form['age']
+        
+        # Update geographical data, ensuring they remain within the chairman's diocese
+        member_to_edit['diocese'] = request.form.get('diocese', '')
+        member_to_edit['denary'] = request.form.get('denary', '')
+        member_to_edit['parish'] = request.form.get('parish', '')
+        member_to_edit['local_church'] = request.form.get('local_church', '')
+
+        # Re-validate that the member remains in the chairman's diocese after edit
+        if member_to_edit.get('diocese') != user.get('diocese'):
+            flash(f"Error: Member cannot be moved out of your diocese ({user['diocese']}).")
+            return render_template('edit_member.html', member=member_to_edit, user=user)
+
+        save_json(USERS_FILE, users_data)
+        flash(f"Member '{member_to_edit['full_name']}' updated successfully!")
+        return redirect(url_for('view_members'))
+
+    return render_template('edit_member.html', member=member_to_edit, user=user)
+
+
+# --- Corrected delete_member function ---
+@app.route('/delete_member/<member_username>', methods=['POST'])
+def delete_member(member_username):
+    global users_data # <--- MOVE THIS LINE TO THE TOP OF THE FUNCTION
+
+    if 'username' not in session:
+        flash("You must be logged in to delete members.")
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user = next((u for u in users_data if u['username'] == username), None)
+
+    if not user:
+        flash("User not found.")
+        session.pop('username', None)
+        return redirect(url_for('login'))
+
+    # Only Chairman (Diocese leader) can delete members
+    if 'chairman' not in user['rank'].lower():
+        flash("You do not have permission to delete members.")
+        return redirect(url_for('dashboard'))
+
+    member_to_delete = next((m for m in users_data if m['username'] == member_username), None)
+
+    if not member_to_delete:
+        flash("Member not found.")
+        return redirect(url_for('view_members'))
+    
+    # Prevent chairman from deleting themselves or members outside their diocese
+    if member_to_delete['username'] == username or member_to_delete.get('diocese') != user.get('diocese'):
+        flash("You cannot delete this member.")
+        return redirect(url_for('view_members'))
+
+    users_data = [m for m in users_data if m['username'] != member_username]
+    save_json(USERS_FILE, users_data)
+    flash(f"Member '{member_to_delete['full_name']}' deleted successfully!")
+    return redirect(url_for('view_members'))
+
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    flash("You have been logged out.")
+    return redirect(url_for('login'))
+
+# --- Main execution block ---
+if __name__ == '__main__':
+    # Ensure JSON files exist, create empty ones if not
+    if not os.path.exists(USERS_FILE):
+        save_json(USERS_FILE, [])
+    if not os.path.exists(POST_FILE):
+        save_json(POST_FILE, [])
+        
+    app.run(debug=True) # Run the Flask app in debug mode

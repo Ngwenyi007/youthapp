@@ -3,41 +3,41 @@
 {% block content %}
 <div class="container">
     <div class="form-card">
-        <h2>Add New Member</h2>
-        <form method="POST" action="{{ url_for('add_member') }}">
+        <h2>Edit Member: {{ member.full_name }}</h2>
+        <form method="POST" action="{{ url_for('edit_member', user_code=member.code) }}">
             <div class="form-group">
                 <label for="full_name">Full Name:</label>
-                <input type="text" id="full_name" name="full_name" required>
+                <input type="text" id="full_name" name="full_name" value="{{ member.full_name }}" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" value="{{ member.email }}" required>
             </div>
             <div class="form-group">
                 <label for="age">Age:</label>
-                <input type="number" id="age" name="age" required>
+                <input type="number" id="age" name="age" value="{{ member.age }}" required>
             </div>
             
             <div class="form-group">
                 <label for="gender">Gender:</label>
                 <select id="gender" name="gender" required>
                     <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
+                    <option value="Male" {% if member.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if member.gender == 'Female' %}selected{% endif %}>Female</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="disability">Disability:</label>
                 <select id="disability" name="disability" required>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
+                    <option value="No" {% if member.disability == 'No' %}selected{% endif %}>No</option>
+                    <option value="Yes" {% if member.disability == 'Yes' %}selected{% endif %}>Yes</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">New Password (leave blank to keep current):</label>
+                <input type="password" id="password" name="password">
             </div>
 
             <div class="form-group">
@@ -46,7 +46,7 @@
                     <option value="">Select Level</option>
                     {% for level in role_definitions.keys() %}
                         {% if level != 'Member' %} {# 'Member' as a level doesn't make sense here #}
-                            <option value="{{ level }}">{{ level }}</option>
+                            <option value="{{ level }}" {% if member.role_level == level %}selected{% endif %}>{{ level }}</option>
                         {% endif %}
                     {% endfor %}
                 </select>
@@ -62,28 +62,29 @@
 
             <div class="form-group">
                 <label for="diocese">Diocese:</label>
-                <input type="text" id="diocese" name="diocese" required>
+                <input type="text" id="diocese" name="diocese" value="{{ member.diocese }}" required>
             </div>
             <div class="form-group">
                 <label for="denary">Denary:</label>
-                <input type="text" id="denary" name="denary" required>
+                <input type="text" id="denary" name="denary" value="{{ member.denary }}" required>
             </div>
             <div class="form-group">
                 <label for="parish">Parish:</label>
-                <input type="text" id="parish" name="parish" required>
+                <input type="text" id="parish" name="parish" value="{{ member.parish }}" required>
             </div>
             <div class="form-group">
                 <label for="local_church">Local Church:</label>
-                <input type="text" id="local_church" name="local_church" required>
+                <input type="text" id="local_church" name="local_church" value="{{ member.local_church }}" required>
             </div>
 
-            <button type="submit" class="btn btn-primary">Add Member</button>
+            <button type="submit" class="btn btn-primary">Update Member</button>
         </form>
     </div>
 </div>
 
 <script>
     const roleDefinitions = {{ role_definitions | tojson | safe }};
+    const memberData = {{ member | tojson | safe }}; // Pass member data for pre-selection
 
     const roleLevelSelect = document.getElementById('role_level');
     const roleSelect = document.getElementById('role');
@@ -97,6 +98,10 @@
                 const option = document.createElement('option');
                 option.value = role;
                 option.textContent = role;
+                // Pre-select the role if it was the member's current role and matches the selected level
+                if (memberData.role_level === selectedLevel && memberData.role === role) { 
+                    option.selected = true;
+                }
                 roleSelect.appendChild(option);
             });
         }
@@ -105,6 +110,10 @@
     // Event listener for role_level change
     if (roleLevelSelect) {
         roleLevelSelect.addEventListener('change', updateRoleOptions);
+        // Initial call to set roles if a role_level is already selected (on page load)
+        if (memberData.role_level) {
+            updateRoleOptions();
+        }
     }
 </script>
 {% endblock %}

@@ -1,58 +1,168 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- Your content goes here -->
-    <h2>Youth Registration Form</h2>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        form {
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #0a84ff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #006edc;
+        }
+        .password-wrapper {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
 
-    <form method="post">
-        <label>Full Name:</label>
-        <input type="text" name="full_name" required><br>
+<form action="/register" method="POST">
+    <h2>Register Member</h2>
 
-        <label>Age:</label>
-        <input type="number" name="age" required><br>
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
 
-        <label>Local Church:</label>
-        <input type="text" name="local_church" required><br>
+    <input type="text" name="fullname" placeholder="Full Name" value="{{ form_data.fullname if form_data else '' }}" required>
+    <input type="text" name="phone" placeholder="Phone Number" value="{{ form_data.phone if form_data else '' }}" required>
+    
+    <div class="password-wrapper">
+        <input type="password" id="password" name="password" placeholder="Password" required>
+        <span class="toggle-password" onclick="togglePassword()">👁️</span>
+    </div>
 
-        <label>Parish:</label>
-        <input type="text" name="parish" required><br>
+<!-- Gender -->
+<label for="gender">Gender:</label>
+<select name="gender" required>
+  <option value="">Select Gender</option>
+  <option value="Male">Male</option>
+  <option value="Female">Female</option>
+  <option value="Other">Other</option>
+</select>
+<br><br>
 
-        <label>Denary:</label>
-        <input type="text" name="denary" required><br>
+    <input type="number" name="age" placeholder="Age" value="{{ form_data.age if form_data else '' }}" required>
 
-        <label>Diocese:</label>
-        <input type="text" name="diocese" required><br>
+    <select name="church_level" required>
+        <option value="" disabled selected>Select Church Level</option>
+        <option value="local">Local Church</option>
+        <option value="parish">Parish</option>
+        <option value="denary">Denary</option>
+        <option value="diocese">Diocese</option>
+        <option value="international">International</option>
+    </select>
 
-        <label>Password:</label>
-        <input type="password" name="password" required><br>
+    <select name="role" required>
+        <option value="" disabled selected>Select Role</option>
+        <option value="chairman">Chairman</option>
+        <option value="secretary">Secretary</option>
+        <option value="treasurer">Treasurer</option>
+        <option value="chaplain">Chaplain</option>
+        <option value="matron">Matron</option>
+        <option value="patron">Patron</option>
+        <option value="organising secretary">Organising Secretary</option>
+    </select>
 
-        <label>Level:</label>
-        <select name="level" id="level-select" required onchange="updateRanks()">
-            <option value="member">Youth Member</option>
-            <option value="local">Local Church Leader</option>
-            <option value="parish">Parish Leader</option>
-            <option value="denary">Denary Leader</option>
-            <option value="diocese">Diocese Leader</option>
-        </select><br>
+    <input type="text" name="local_church" placeholder="Local Church" value="{{ form_data.local_church if form_data else '' }}">
+    <input type="text" name="parish" placeholder="Parish" value="{{ form_data.parish if form_data else '' }}">
+    <input type="text" name="denary" placeholder="Denary" value="{{ form_data.denary if form_data else '' }}">
+    <input type="text" name="diocese" placeholder="Diocese" value="{{ form_data.diocese if form_data else '' }}">
 
-        <label>Rank:</label>
-        <select name="rank" id="rank-select" required>
-            <option value="Member">Member</option>
-        </select><br>
+    <input type="text" name="residence" placeholder="Place of Residence" value="{{ form_data.residence if form_data else '' }}">
+    <input type="text" name="education_level" placeholder="Education Level" value="{{ form_data.education_level if form_data else '' }}">
+    
+    <select name="disability">
+        <option value="" disabled selected>Disability (if any)</option>
+        <option value="none">None</option>
+        <option value="physical">Physical</option>
+        <option value="visual">Visual</option>
+        <option value="hearing">Hearing</option>
+        <option value="other">Other</option>
+    </select>
+<label>Date of Birth:</label>
+<div style="display: flex; gap: 10px;">
+  <select name="birth_day" required>
+    <option value="">Day</option>
+    {% for d in range(1, 32) %}
+      <option value="{{ d }}">{{ d }}</option>
+    {% endfor %}
+  </select>
 
-        <button type="submit">Register</button>
-    </form>
+  <select name="birth_month" required>
+    <option value="">Month</option>
+    {% for m in [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'] %}
+      <option value="{{ m }}">{{ m }}</option>
+    {% endfor %}
+  </select>
 
-    <p><a href="{{ url_for('login') }}">Already registered? Login here.</a></p>
+  <select name="birth_year" required>
+    <option value="">Year</option>
+    {% for y in range(1940, 2026) | reverse %}
+      <option value="{{ y }}">{{ y }}</option>
+    {% endfor %}
+  </select>
+</div>
+    <select name="occupation_status">
+        <option value="" disabled selected>Occupation Status</option>
+        <option value="student">Student</option>
+        <option value="employed">Employed</option>
+        <option value="unemployed">Unemployed</option>
+    </select>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <select name="institution_type">
+        <option value="" disabled selected>If Student, Choose Institution Type</option>
+        <option value="secondary">Secondary</option>
+        <option value="college">College</option>
+        <option value="polytechnic">Polytechnic</option>
+        <option value="university">University</option>
+        <option value="other">Other</option>
+    </select>
 
+    <textarea name="talents" placeholder="Your Talents">{{ form_data.talents if form_data else '' }}</textarea>
+    <textarea name="skills" placeholder="Skills/Profession">{{ form_data.skills if form_data else '' }}</textarea>
+
+    <button type="submit">Register</button>
+</form>
+
+<script>
+    function togglePassword() {
+        const input = document.getElementById('password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+</script>
 {% endblock %}

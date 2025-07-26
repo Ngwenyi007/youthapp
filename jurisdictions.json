@@ -1,0 +1,71 @@
+[
+    {
+        "name": "Archdiocese of Nairobi",
+        "children": [
+            {
+                "name": "Nairobi Central Denary",
+                "children": [
+                    {
+                        "name": "Holy Family Basilica Parish",
+                        "children": [
+                            {
+                                "name": "Main Church"
+                            },
+                            {
+                                "name": "St. Paul's Chapel"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "St. Peter Claver's Parish",
+                        "children": [
+                            {
+                                "name": "St. Peter Claver Main"
+                            },
+                            {
+                                "name": "Immaculate Conception Outstation"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Karen Denary",
+                "children": [
+                    {
+                        "name": "St. Francis Karen Parish",
+                        "children": [
+                            {
+                                "name": "St. Francis Main"
+                            },
+                            {
+                                "name": "Karen Community Chapel"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Diocese of Mombasa",
+        "children": [
+            {
+                "name": "Mombasa Island Denary",
+                "children": [
+                    {
+                        "name": "Holy Ghost Cathedral Parish",
+                        "children": [
+                            {
+                                "name": "Main Cathedral"
+                            },
+                            {
+                                "name": "Old Town Chapel"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

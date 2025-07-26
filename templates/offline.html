@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+    {% for u in users %}
+      <li>{{ u.fname }} {{ u.lname }} - {{ u.phone }} - {{ u.email }}</li>
+    {% endfor %}
+  </ul>
+  <h1>You’re Offline</h1>
+  <p>This page is not available right now because you're offline.</p>
+  <p>Please reconnect to continue using the app.</p>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-lg font-bold my-4">🔧 Update Your Profile</h2>
+
+<form method="POST" class="space-y-4">
+  {% for field in ['fullname', 'phone', 'residence', 'gender', 'age', 'dob', 'education_level', 'disability', 'occupation_status', 'institution_type', 'talents', 'skills'] %}
+    <div>
+      <label class="block font-semibold capitalize">{{ field.replace('_', ' ') }}</label>
+      {% if field == 'gender' %}
+        <select name="gender" class="w-full border rounded p-2">
+          <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+        </select>
+      {% elif field == 'dob' %}
+        <input type="date" name="dob" value="{{ user.dob | default('') }}" class="w-full border rounded p-2" />
+      {% else %}
+        <input type="text" name="{{ field }}" value="{{ user[field] }}" class="w-full border rounded p-2" />
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Update Profile</button>
+</form>
+
+<a href="{{ url_for('view_my_details') }}" class="text-blue-700 block mt-4">← Back to My Details</a>
+{% endblock %}
