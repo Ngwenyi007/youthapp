@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="create-event-container">
+    <div class="page-header">
+        <h1>📅 Create New Event</h1>
+        <a href="/events" class="btn btn-secondary">← Back to Events</a>
+    </div>
+
+    <form method="POST" class="event-form">
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label for="title">📝 Event Title</label>
+                <input type="text" id="title" name="title" required 
+                       placeholder="Enter event title..." maxlength="100">
+            </div>
+
+            <div class="form-group full-width">
+                <label for="description">📄 Description</label>
+                <textarea id="description" name="description" required 
+                          placeholder="Describe your event..." rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="start_date">📅 Start Date & Time</label>
+                <input type="datetime-local" id="start_date" name="start_date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="end_date">📅 End Date & Time</label>
+                <input type="datetime-local" id="end_date" name="end_date" required>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="location">📍 Location</label>
+                <input type="text" id="location" name="location" required 
+                       placeholder="Enter event location..." maxlength="200">
+            </div>
+
+            <div class="form-group">
+                <label for="max_attendees">👥 Maximum Attendees (Optional)</label>
+                <input type="number" id="max_attendees" name="max_attendees" 
+                       placeholder="Leave empty for unlimited" min="1" max="1000">
+            </div>
+
+            <div class="form-group">
+                <label>⚙️ Event Settings</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="allow_guests" checked>
+                        Allow members to bring guests
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="send_reminders" checked>
+                        Send reminder notifications
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+            <button type="submit" class="btn btn-primary">📅 Create Event</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Set minimum date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const isoString = now.toISOString().slice(0, 16);
+    document.getElementById('start_date').min = isoString;
+    document.getElementById('end_date').min = isoString;
+    
+    // Update end date minimum when start date changes
+    document.getElementById('start_date').addEventListener('change', function() {
+        document.getElementById('end_date').min = this.value;
+        
+        // If end date is before start date, update it
+        const endDate = document.getElementById('end_date');
+        if (endDate.value && endDate.value < this.value) {
+            endDate.value = this.value;
+        }
+    });
+});
+
+// Form validation
+document.querySelector('.event-form').addEventListener('submit', function(e) {
+    const startDate = new Date(document.getElementById('start_date').value);
+    const endDate = new Date(document.getElementById('end_date').value);
+    
+    if (endDate <= startDate) {
+        e.preventDefault();
+        alert('End date must be after start date.');
+        return false;
+    }
+    
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const location = document.getElementById('location').value.trim();
+    
+    if (!title || !description || !location) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+        return false;
+    }
+});
+</script>
+
+<style>
+.create-event-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: #333;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.event-form {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: normal !important;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.checkbox-label:hover {
+    background: #f8f9fa;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    transform: scale(1.2);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Input styling improvements */
+input[type="datetime-local"] {
+    font-family: inherit;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Validation styles */
+.form-group input:invalid,
+.form-group textarea:invalid {
+    border-color: #dc3545;
+}
+
+.form-group input:valid,
+.form-group textarea:valid {
+    border-color: #28a745;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .create-event-container {
+        padding: 15px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .event-form {
+        padding: 20px;
+    }
+}
+
+/* Loading state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Success feedback */
+.form-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Error feedback */
+.form-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}

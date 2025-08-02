@@ -1,151 +1,781 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- Your content goes here -->
-  <h2>Welcome, {{ user.full_name }} ({{ user.rank }})</h2>
-
 <div class="dashboard-container">
+  <!-- Dashboard Header -->
   <div class="dashboard-header">
-    <h2>Welcome, {{ user.full_name }}</h2>
-    <div class="actions">
-      <button id="toggleMode">🌙 Light/Dark</button>
+    <div class="user-welcome">
+      <h2>Welcome, {{ user.full_name }}</h2>
+      <p class="user-role">{{ user.rank }} • {{ user.local_church }}</p>
+    </div>
+    <div class="header-actions">
+      <!-- Notifications -->
+      <div class="notification-icon" onclick="window.location.href='/notifications'">
+        🔔
+        {% if unread_notifications > 0 %}
+          <span class="notification-badge">{{ unread_notifications }}</span>
+        {% endif %}
+      </div>
+      <!-- Messages -->
+      <button onclick="window.location.href='/messages'" class="icon-btn">💬</button>
+      <!-- Profile -->
+      <button onclick="window.location.href='/profile/{{ user.username }}'" class="icon-btn">👤</button>
+      <!-- Logout -->
       <form action="/logout" method="POST" style="display:inline;">
-        <button type="submit">🔓 Logout</button>
+        <button type="submit" class="logout-btn">🔓</button>
       </form>
-      <button onclick="requestNotificationPermission()">🔔 Enable Notifications</button>
     </div>
   </div>
 
-  <h3>Members in Your Jurisdiction</h3>
-  <div class="members-grid">
-    {% for m in members %}
-      <div class="member-card">
-        <p><strong>{{ m.full_name }}</strong> ({{ m.rank }})</p>
-        <details>
-          <summary>View Details</summary>
-          <ul>
-            <li>Age: {{ m.age }}</li>
-            <li>Church: {{ m.local_church }}</li>
-            <li>Parish: {{ m.parish }}</li>
-            <li>Denary: {{ m.denary }}</li>
-            <li>Diocese: {{ m.diocese }}</li>
-          </ul>
-        </details>
-      </div>
-    {% endfor %}
+  <!-- Quick Stats -->
+  <div class="quick-stats">
+    <div class="stat-card">
+      <div class="stat-number">{{ posts|length }}</div>
+      <div class="stat-label">Recent Posts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{ upcoming_events|length }}</div>
+      <div class="stat-label">Upcoming Events</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{ unread_notifications }}</div>
+      <div class="stat-label">Notifications</div>
+    </div>
   </div>
 
-  <hr>
+  <!-- Main Content Grid -->
+  <div class="dashboard-grid">
+    <!-- Left Column -->
+    <div class="left-column">
+      <!-- Navigation Menu -->
+      <div class="nav-menu">
+        <h3>Navigation</h3>
+        <ul>
+          <li><a href="/dashboard" class="active">📊 Dashboard</a></li>
+          <li><a href="/events">📅 Events</a></li>
+          <li><a href="/prayers">🙏 Prayer & Testimony</a></li>
+          <li><a href="/messages">💬 Messages</a></li>
+          <li><a href="/documents">📁 Documents</a></li>
+          <li><a href="/search">🔍 Search</a></li>
+          {% if 'chairman' in user.rank.lower() %}
+            <li><a href="/members">👥 Members</a></li>
+            <li><a href="/add_member">➕ Add Member</a></li>
+          {% endif %}
+        </ul>
+      </div>
 
-  <h3>Post Something</h3>
-  <form action="/post" method="POST">
-    <textarea name="content" rows="3" required placeholder="Write your message..."></textarea>
-    <button type="submit">Post</button>
-  </form>
+      <!-- Upcoming Events -->
+      {% if upcoming_events %}
+      <div class="widget">
+        <h3>Upcoming Events</h3>
+        {% for event in upcoming_events %}
+        <div class="event-item">
+          <div class="event-date">{{ event.start_date[:10] }}</div>
+          <div class="event-details">
+            <h4>{{ event.title }}</h4>
+            <p>{{ event.location }}</p>
+            <div class="event-actions">
+              <button onclick="rsvpEvent('{{ event.id }}')" class="rsvp-btn">
+                RSVP ({{ event.rsvp|length if event.rsvp else 0 }})
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        <a href="/events" class="view-all">View All Events</a>
+      </div>
+      {% endif %}
+    </div>
 
-  <h3>Posts</h3>
-  <div class="post-list">
-    {% for post in posts %}
-      <div class="post-card">
-        <p>{{ post.content }}</p>
-        <small>By {{ post.author }} — {{ post.timestamp|safe }}</small>
-        {% if post.comments %}
-          <details>
-            <summary>Comments ({{ post.comments|length }})</summary>
-            <ul>
-              {% for comment in post.comments %}
-                <li><strong>{{ comment.author }}:</strong> {{ comment.text }}</li>
-              {% endfor %}
-            </ul>
-          </details>
-        {% endif %}
-        <form action="/comment/{{ post.id }}" method="POST">
-          <input name="comment" placeholder="Add comment..." required>
-          <button type="submit">Reply</button>
+    <!-- Center Column -->
+    <div class="center-column">
+      <!-- Create Post (Leaders Only) -->
+      {% if 'member' not in user.rank.lower() %}
+      <div class="create-post-widget">
+        <form method="POST" id="postForm">
+          <div class="post-type-selector">
+            <label>
+              <input type="radio" name="post_type" value="general" checked> 📝 General
+            </label>
+            <label>
+              <input type="radio" name="post_type" value="announcement"> 📢 Announcement
+            </label>
+            <label>
+              <input type="radio" name="post_type" value="urgent"> 🚨 Urgent
+            </label>
+          </div>
+          <textarea name="content" placeholder="What's on your mind?" required rows="3"></textarea>
+          <div class="post-actions">
+            <button type="submit" class="post-btn">📝 Post</button>
+          </div>
         </form>
       </div>
-    {% endfor %}
+      {% endif %}
+
+      <!-- Posts Feed -->
+      <div class="posts-feed">
+        <h3>Recent Posts</h3>
+        {% for post in posts %}
+        <div class="post-card {% if post.type == 'urgent' %}urgent{% elif post.type == 'announcement' %}announcement{% endif %}">
+          <div class="post-header">
+            <div class="post-author">
+              <strong>{{ post.author }}</strong>
+              <span class="post-meta">{{ post.time_ago }}</span>
+              {% if post.pinned %}
+                <span class="pinned-badge">📌 Pinned</span>
+              {% endif %}
+              {% if post.type != 'general' %}
+                <span class="post-type-badge">{{ post.type.title() }}</span>
+              {% endif %}
+            </div>
+            <!-- Post Controls -->
+            {% if user.username == post.username %}
+            <div class="post-controls">
+              <button onclick="editPost('{{ post.id }}')" title="Edit">✏️</button>
+              <button onclick="deletePost('{{ post.id }}')" title="Delete">🗑️</button>
+              <button onclick="pinPost('{{ post.id }}')" title="Pin/Unpin">📌</button>
+            </div>
+            {% endif %}
+          </div>
+          
+          <div class="post-content">
+            <p>{{ post.content }}</p>
+          </div>
+          
+          <div class="post-actions">
+            <button onclick="likePost('{{ post.id }}')" class="like-btn {% if post.user_liked %}liked{% endif %}">
+              ❤️ <span id="like-count-{{ post.id }}">{{ post.like_count }}</span>
+            </button>
+            <button onclick="toggleComments('{{ post.id }}')" class="comment-btn">
+              💬 {{ post.comments|length }}
+            </button>
+          </div>
+          
+          <!-- Comments Section -->
+          <div class="comments-section" id="comments-{{ post.id }}" style="display: none;">
+            {% for comment in post.comments %}
+            <div class="comment">
+              <strong>{{ comment.author }}:</strong> {{ comment.text }}
+              <small>{{ comment.timestamp[:16] }}</small>
+            </div>
+            {% endfor %}
+            <form class="comment-form" action="/comment/{{ post.id }}" method="POST">
+              <input name="comment" placeholder="Add a comment..." required>
+              <button type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <!-- Quick Actions -->
+      <div class="widget">
+        <h3>Quick Actions</h3>
+        <div class="quick-actions">
+          <a href="/events" class="action-btn">📅 View Events</a>
+          {% if 'member' not in user.rank.lower() %}
+            <a href="/create_event" class="action-btn">➕ Create Event</a>
+          {% endif %}
+          <a href="/prayers" class="action-btn">🙏 Prayers</a>
+          <a href="/messages" class="action-btn">💬 Messages</a>
+          <a href="/documents" class="action-btn">📁 Documents</a>
+        </div>
+      </div>
+
+      <!-- Search Widget -->
+      <div class="widget">
+        <h3>Search</h3>
+        <form action="/search" method="GET" class="search-form">
+          <input type="text" name="q" placeholder="Search posts, users, events..." required>
+          <button type="submit">🔍</button>
+        </form>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="widget">
+        <h3>Recent Activity</h3>
+        <div class="activity-list">
+          {% for post in posts[:3] %}
+          <div class="activity-item">
+            <div class="activity-icon">📝</div>
+            <div class="activity-text">
+              <strong>{{ post.author }}</strong> posted
+              <small>{{ post.time_ago }}</small>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- WebSocket and JavaScript -->
+<script src="/static/socket.io.js"></script>
+<script>
+// Initialize Socket.IO
+const socket = io();
 
+socket.on('connect', function() {
+    console.log('Connected to server');
+});
 
-  <!-- Search Bar -->
-  <form method="GET" action="/dashboard">
-    <input type="text" name="q" placeholder="Search posts..." value="{{ request.args.get('q', '') }}">
-    <button type="submit">Search</button>
-  </form>
+socket.on('new_notification', function(notification) {
+    showNotification(notification);
+    updateNotificationBadge();
+});
 
-  <!-- Level Filter Buttons -->
-  <div class="btn-group">
-    {% for level in ['local_church', 'parish', 'denary', 'diocese'] %}
-      {% set value = user[level] %}
-      <form method="get" style="display:inline;">
-        <button type="submit" name="filter" value="{{ level }}"
-          class="{% if request.args.get('filter') == level %}highlight{% endif %}">
-          {{ level.replace('_', ' ').capitalize() }}: {{ value }}
-        </button>
-      </form>
-    {% endfor %}
-  </div>
+socket.on('new_message', function(message) {
+    showNotification({
+        title: 'New Message',
+        message: `New message from ${message.sender_name}`,
+        type: 'info'
+    });
+});
 
-  <!-- Add Post (Leaders Only) -->
-  {% if 'member' not in user.rank.lower() %}
-    <form method="POST" style="margin-top: 20px;">
-      <textarea name="content" placeholder="Write something..." required></textarea><br>
-      <button type="submit">Post</button>
-    </form>
-  {% endif %}
+// Functions
+function likePost(postId) {
+    fetch(`/like_post/${postId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            const likeBtn = document.querySelector(`button[onclick="likePost('${postId}')"]`);
+            const countSpan = document.getElementById(`like-count-${postId}`);
+            
+            countSpan.textContent = data.like_count;
+            if (data.liked) {
+                likeBtn.classList.add('liked');
+            } else {
+                likeBtn.classList.remove('liked');
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
 
-  <!-- View Members & Add Member (Chairman Only) -->
-  {% if 'chairman' in user.rank.lower() %}
-    <div style="margin-top: 15px;">
-      <a href="{{ url_for('view_members') }}">View Members</a> |
-      <a href="{{ url_for('add_member') }}">Add Member</a>
-    </div>
-  {% endif %}
+function toggleComments(postId) {
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    if (commentsSection.style.display === 'none') {
+        commentsSection.style.display = 'block';
+    } else {
+        commentsSection.style.display = 'none';
+    }
+}
 
-  <hr>
+function rsvpEvent(eventId) {
+    fetch(`/rsvp_event/${eventId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            location.reload(); // Refresh to show updated RSVP status
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
 
-  <!-- Posts -->
-  {% for post in posts %}
-    <div class="post">
-      <div>
-        <strong>{{ post.author }}</strong> ({{ post.level or 'N/A' }}) - {{ post.time_ago }}
-        {% if post.pinned %}
-          <span style="color: green;">[Pinned]</span>
-        {% endif %}
-      </div>
-      <p>{{ post.content }}</p>
+function editPost(postId) {
+    const newContent = prompt('Edit your post:');
+    if (newContent) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/edit_post/${postId}`;
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'new_content';
+        input.value = newContent;
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 
-      <!-- Post Controls -->
-      {% if user.username == post.username %}
-        <div class="controls">
-          <form method="POST" action="/edit_post/{{ post.id }}" style="display:inline;">
-            <input type="text" name="new_content" placeholder="Edit..." required>
-            <button type="submit">Edit</button>
-          </form>
-          <form method="POST" action="/delete_post/{{ post.id }}" style="display:inline;">
-            <button type="submit">Delete</button>
-          </form>
-          <form method="POST" action="/pin_post/{{ post.id }}" style="display:inline;">
-            <button type="submit">{{ 'Unpin' if post.pinned else 'Pin' }}</button>
-          </form>
+function deletePost(postId) {
+    if (confirm('Are you sure you want to delete this post?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/delete_post/${postId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function pinPost(postId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/pin_post/${postId}`;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function showNotification(notification) {
+    // Create a simple notification popup
+    const notificationDiv = document.createElement('div');
+    notificationDiv.className = 'notification-popup';
+    notificationDiv.innerHTML = `
+        <div class="notification-content">
+            <h4>${notification.title}</h4>
+            <p>${notification.message}</p>
         </div>
-      {% endif %}
+    `;
+    
+    document.body.appendChild(notificationDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notificationDiv.remove();
+    }, 5000);
+}
 
-      <!-- Comments -->
-      <div>
-        {% for comment in post.comments %}
-          <div class="comment">
-            {{ comment.author }}: {{ comment.text }} <small>({{ comment.timestamp | safe }})</small>
-          </div>
-        {% endfor %}
-        <!-- Add Comment -->
-        <form method="POST" action="/comment/{{ post.id }}">
-          <input type="text" name="comment" placeholder="Add comment..." required>
-          <button type="submit">Comment</button>
-        </form>
-      </div>
-    </div>
-  {% endfor %}
+function updateNotificationBadge() {
+    // This would fetch and update the notification count
+    // For now, just reload the page to update the count
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+</script>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.user-welcome h2 {
+    margin: 0;
+    color: #333;
+}
+
+.user-role {
+    color: #666;
+    margin: 5px 0 0 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.notification-icon {
+    position: relative;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 8px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+.icon-btn:hover {
+    background: #e9ecef;
+}
+
+.logout-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    color: #666;
+    margin-top: 5px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 250px 1fr 250px;
+    gap: 30px;
+}
+
+.nav-menu {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.nav-menu ul {
+    list-style: none;
+    padding: 0;
+}
+
+.nav-menu li {
+    margin-bottom: 10px;
+}
+
+.nav-menu a {
+    display: block;
+    padding: 10px;
+    text-decoration: none;
+    color: #333;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.nav-menu a:hover, .nav-menu a.active {
+    background: #007bff;
+    color: white;
+}
+
+.widget {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.widget h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.create-post-widget {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.post-type-selector {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.post-type-selector label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.post-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.post-card.urgent {
+    border-left-color: #dc3545;
+}
+
+.post-card.announcement {
+    border-left-color: #ffc107;
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.post-meta {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+.pinned-badge, .post-type-badge {
+    background: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+.post-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.post-controls button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.post-controls button:hover {
+    background: #f8f9fa;
+}
+
+.post-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.like-btn, .comment-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.like-btn:hover, .comment-btn:hover {
+    background: #f8f9fa;
+}
+
+.like-btn.liked {
+    color: #dc3545;
+}
+
+.comments-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.comment {
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.comment-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.comment-form input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.comment-form button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.event-item {
+    display: flex;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.event-date {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    min-width: 60px;
+    font-weight: bold;
+}
+
+.event-details h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.event-details p {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.rsvp-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.action-btn {
+    display: block;
+    padding: 10px;
+    background: #f8f9fa;
+    text-decoration: none;
+    color: #333;
+    border-radius: 5px;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.action-btn:hover {
+    background: #e9ecef;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.search-form button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.activity-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.activity-icon {
+    font-size: 1.2em;
+}
+
+.activity-text small {
+    display: block;
+    color: #666;
+    font-size: 0.8em;
+}
+
+.notification-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 300px;
+    z-index: 1000;
+    border-left: 4px solid #007bff;
+}
+
+.notification-content h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.notification-content p {
+    margin: 0;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .left-column, .right-column {
+        order: 2;
+    }
+    
+    .center-column {
+        order: 1;
+    }
+}
+</style>
 {% endblock %}

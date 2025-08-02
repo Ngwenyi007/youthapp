@@ -1,58 +1,507 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- Your content goes here -->
-    <h2>Youth Registration Form</h2>
+<div class="register-container">
+    <div class="register-header">
+        <h1>🎯 Youth Registration</h1>
+        <p>Join our youth community and connect with members</p>
+    </div>
+
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-        <ul>
+        <div class="flash-messages">
           {% for message in messages %}
-            <li>{{ message }}</li>
+            <div class="flash-message error">{{ message }}</div>
           {% endfor %}
-        </ul>
+        </div>
       {% endif %}
     {% endwith %}
 
-    <form method="post">
-        <label>Full Name:</label>
-        <input type="text" name="full_name" required><br>
+    <form method="POST" class="register-form">
+        <div class="form-sections">
+            <!-- Personal Information -->
+            <div class="form-section">
+                <h3>👤 Personal Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="full_name">Full Name *</label>
+                        <input type="text" id="full_name" name="full_name" required maxlength="100"
+                               placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="age">Age *</label>
+                        <input type="number" id="age" name="age" required min="13" max="100"
+                               placeholder="Your age">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" maxlength="100"
+                               placeholder="your.email@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" maxlength="20"
+                               placeholder="+1234567890">
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="bio">Bio / About Yourself (Optional)</label>
+                    <textarea id="bio" name="bio" rows="3" maxlength="500"
+                              placeholder="Tell us about yourself..."></textarea>
+                    <div class="char-count">
+                        <span id="bioCount">0</span>/500 characters
+                    </div>
+                </div>
+            </div>
 
-        <label>Age:</label>
-        <input type="number" name="age" required><br>
+            <!-- Organization Details -->
+            <div class="form-section">
+                <h3>⛪ Organization Details</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="diocese">Diocese *</label>
+                        <input type="text" id="diocese" name="diocese" required maxlength="100"
+                               placeholder="Your diocese">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="denary">Denary *</label>
+                        <input type="text" id="denary" name="denary" required maxlength="100"
+                               placeholder="Your denary">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="parish">Parish *</label>
+                        <input type="text" id="parish" name="parish" required maxlength="100"
+                               placeholder="Your parish">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="local_church">Local Church *</label>
+                        <input type="text" id="local_church" name="local_church" required maxlength="100"
+                               placeholder="Your local church">
+                    </div>
+                </div>
+            </div>
 
-        <label>Local Church:</label>
-        <input type="text" name="local_church" required><br>
+            <!-- Leadership Information -->
+            <div class="form-section">
+                <h3>👑 Leadership Role</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="level">Organization Level *</label>
+                        <select id="level" name="level" required onchange="updateRanks()">
+                            <option value="">Select level...</option>
+                            <option value="member">Youth Member</option>
+                            <option value="local">Local Church Leader</option>
+                            <option value="parish">Parish Leader</option>
+                            <option value="denary">Denary Leader</option>
+                            <option value="diocese">Diocese Leader</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rank">Specific Rank *</label>
+                        <select id="rank" name="rank" required>
+                            <option value="">First select a level</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="rank-info">
+                    <p id="rank-description">Select a level to see available ranks</p>
+                </div>
+            </div>
 
-        <label>Parish:</label>
-        <input type="text" name="parish" required><br>
+            <!-- Security -->
+            <div class="form-section">
+                <h3>🔒 Account Security</h3>
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password" required minlength="6"
+                           placeholder="Create a secure password">
+                    <small class="password-hint">Minimum 6 characters</small>
+                </div>
+            </div>
+        </div>
 
-        <label>Denary:</label>
-        <input type="text" name="denary" required><br>
-
-        <label>Diocese:</label>
-        <input type="text" name="diocese" required><br>
-
-        <label>Password:</label>
-        <input type="password" name="password" required><br>
-
-        <label>Level:</label>
-        <select name="level" id="level-select" required onchange="updateRanks()">
-            <option value="member">Youth Member</option>
-            <option value="local">Local Church Leader</option>
-            <option value="parish">Parish Leader</option>
-            <option value="denary">Denary Leader</option>
-            <option value="diocese">Diocese Leader</option>
-        </select><br>
-
-        <label>Rank:</label>
-        <select name="rank" id="rank-select" required>
-            <option value="Member">Member</option>
-        </select><br>
-
-        <button type="submit">Register</button>
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🎯 Register</button>
+            <a href="/login" class="btn btn-secondary">Already have an account? Login</a>
+        </div>
     </form>
+</div>
 
-    <p><a href="{{ url_for('login') }}">Already registered? Login here.</a></p>
+<script>
+// Character counter for bio
+document.getElementById('bio').addEventListener('input', function() {
+    const charCount = this.value.length;
+    const counter = document.getElementById('bioCount');
+    counter.textContent = charCount;
+    
+    if (charCount > 450) {
+        counter.style.color = '#dc3545';
+    } else if (charCount > 400) {
+        counter.style.color = '#ffc107';
+    } else {
+        counter.style.color = '#28a745';
+    }
+});
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+// Update ranks based on level selection
+function updateRanks() {
+    const level = document.getElementById('level').value;
+    const rankSelect = document.getElementById('rank');
+    const description = document.getElementById('rank-description');
+    
+    // Clear existing options
+    rankSelect.innerHTML = '';
+    
+    const ranks = {
+        'member': {
+            options: ['Member'],
+            description: 'Regular youth member with access to basic features'
+        },
+        'local': {
+            options: ['Secretary', 'Treasurer', 'Chairman'],
+            description: 'Leadership roles at the local church level'
+        },
+        'parish': {
+            options: ['Parish Secretary', 'Parish Treasurer', 'Parish Chairman'],
+            description: 'Leadership roles managing multiple local churches'
+        },
+        'denary': {
+            options: ['Denary Secretary', 'Denary Treasurer', 'Denary Chairman'],
+            description: 'Leadership roles managing multiple parishes'
+        },
+        'diocese': {
+            options: ['Diocese Secretary', 'Diocese Treasurer', 'Diocese Chairman'],
+            description: 'Top-level leadership roles managing the entire diocese'
+        }
+    };
+    
+    if (level && ranks[level]) {
+        ranks[level].options.forEach(rank => {
+            const option = document.createElement('option');
+            option.value = rank;
+            option.textContent = rank;
+            rankSelect.appendChild(option);
+        });
+        description.textContent = ranks[level].description;
+        description.style.color = '#007bff';
+    } else {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'First select a level';
+        rankSelect.appendChild(option);
+        description.textContent = 'Select a level to see available ranks';
+        description.style.color = '#666';
+    }
+}
 
+// Form validation
+document.querySelector('.register-form').addEventListener('submit', function(e) {
+    const requiredFields = ['full_name', 'age', 'diocese', 'denary', 'parish', 'local_church', 'level', 'rank', 'password'];
+    
+    for (const field of requiredFields) {
+        const element = document.getElementById(field);
+        if (!element.value.trim()) {
+            e.preventDefault();
+            alert(`Please fill in the ${field.replace('_', ' ')} field`);
+            element.focus();
+            return;
+        }
+    }
+    
+    const age = parseInt(document.getElementById('age').value);
+    if (age < 13 || age > 100) {
+        e.preventDefault();
+        alert('Age must be between 13 and 100');
+        document.getElementById('age').focus();
+        return;
+    }
+    
+    const password = document.getElementById('password').value;
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long');
+        document.getElementById('password').focus();
+        return;
+    }
+    
+    const email = document.getElementById('email').value;
+    if (email && !isValidEmail(email)) {
+        e.preventDefault();
+        alert('Please enter a valid email address');
+        document.getElementById('email').focus();
+        return;
+    }
+});
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Initialize ranks on page load
+updateRanks();
+</script>
+
+<style>
+.register-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.register-header h1 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 2.5em;
+}
+
+.register-header p {
+    margin: 0;
+    color: #666;
+    font-size: 1.1em;
+}
+
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash-message {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.flash-message.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.register-form {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.form-sections {
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section h3 {
+    margin: 0 0 25px 0;
+    color: #333;
+    font-size: 1.3em;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.char-count {
+    text-align: right;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.password-hint {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.rank-info {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.rank-info p {
+    margin: 0;
+    font-style: italic;
+}
+
+.form-actions {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.1em;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 1em;
+    padding: 8px 16px;
+}
+
+.btn-secondary:hover {
+    background: #f8f9fa;
+}
+
+/* Validation styles */
+.form-group input:invalid {
+    border-color: #dc3545;
+}
+
+.form-group input:valid {
+    border-color: #28a745;
+}
+
+.form-group input:required {
+    border-left-width: 4px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .register-container {
+        padding: 15px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-sections {
+        padding: 20px;
+    }
+    
+    .register-header h1 {
+        font-size: 2em;
+    }
+    
+    .form-actions {
+        padding: 15px 20px;
+    }
+}
+
+/* Animation for form sections */
+.form-section {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Success feedback */
+.form-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+</style>
 {% endblock %}

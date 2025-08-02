@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="messages-container">
+    <div class="page-header">
+        <h1>💬 Messages</h1>
+    </div>
+
+    <div class="messages-layout">
+        <!-- Conversations List -->
+        <div class="conversations-sidebar">
+            <h3>Conversations</h3>
+            
+            {% if conversations %}
+            <div class="conversations-list">
+                {% for user_id, conversation in conversations %}
+                <div class="conversation-item" onclick="openConversation('{{ user_id }}')">
+                    <div class="conversation-avatar">
+                        {% if conversation.user.profile_picture %}
+                        <img src="/uploads/{{ conversation.user.profile_picture }}" alt="Profile">
+                        {% else %}
+                        <div class="avatar-placeholder">{{ conversation.user.full_name[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">{{ conversation.user.full_name }}</div>
+                        <div class="conversation-preview">
+                            {% if conversation.last_message %}
+                            {{ conversation.last_message.content[:50] }}...
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="conversation-meta">
+                        {% if conversation.unread_count > 0 %}
+                        <span class="unread-badge">{{ conversation.unread_count }}</span>
+                        {% endif %}
+                        {% if conversation.last_message %}
+                        <span class="conversation-time">{{ conversation.last_message.timestamp[:16] }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-conversations">
+                <p>No conversations yet</p>
+                <p class="hint">Start a conversation by visiting someone's profile!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Message Area -->
+        <div class="message-area">
+            <div class="welcome-message">
+                <h3>Welcome to Messages!</h3>
+                <p>Select a conversation from the left to start messaging.</p>
+                <div class="message-features">
+                    <div class="feature">
+                        <span class="feature-icon">💬</span>
+                        <span>Real-time messaging</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🔔</span>
+                        <span>Instant notifications</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">👥</span>
+                        <span>Connect with your community</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WebSocket integration -->
+<script src="/static/socket.io.js"></script>
+<script>
+// Initialize Socket.IO
+const socket = io();
+
+socket.on('connect', function() {
+    console.log('Connected to message server');
+});
+
+socket.on('new_message', function(message) {
+    console.log('New message received:', message);
+    updateConversationList();
+    showMessageNotification(message);
+});
+
+function openConversation(userId) {
+    window.location.href = `/conversation/${userId}`;
+}
+
+function updateConversationList() {
+    // Refresh the conversation list to show new messages
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+
+function showMessageNotification(message) {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.className = 'message-notification';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <strong>New message from ${message.sender_name}</strong>
+            <p>${message.content}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Search functionality
+function searchConversations(query) {
+    const conversations = document.querySelectorAll('.conversation-item');
+    conversations.forEach(conv => {
+        const name = conv.querySelector('.conversation-name').textContent.toLowerCase();
+        const preview = conv.querySelector('.conversation-preview').textContent.toLowerCase();
+        
+        if (name.includes(query.toLowerCase()) || preview.includes(query.toLowerCase())) {
+            conv.style.display = 'flex';
+        } else {
+            conv.style.display = 'none';
+        }
+    });
+}
+</script>
+
+<style>
+.messages-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    height: calc(100vh - 100px);
+}
+
+.page-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: #333;
+}
+
+.messages-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 20px;
+    height: calc(100% - 80px);
+}
+
+.conversations-sidebar {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.conversations-sidebar h3 {
+    margin: 0;
+    padding: 20px;
+    background: #f8f9fa;
+    color: #333;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.conversation-item:hover {
+    background: #f8f9fa;
+}
+
+.conversation-item:last-child {
+    border-bottom: none;
+}
+
+.conversation-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.conversation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.conversation-preview {
+    color: #666;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-meta {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.unread-badge {
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.conversation-time {
+    color: #999;
+    font-size: 0.8em;
+}
+
+.no-conversations {
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+}
+
+.no-conversations .hint {
+    font-style: italic;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.message-area {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.welcome-message {
+    text-align: center;
+    color: #666;
+    max-width: 400px;
+}
+
+.welcome-message h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.message-features {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.feature-icon {
+    font-size: 1.2em;
+}
+
+.message-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    padding: 15px;
+    max-width: 300px;
+    z-index: 1000;
+    border-left: 4px solid #007bff;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-content strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.notification-content p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+@media (max-width: 768px) {
+    .messages-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+    
+    .conversations-sidebar {
+        max-height: 300px;
+    }
+    
+    .message-area {
+        min-height: 400px;
+    }
+}
+
+/* Custom scrollbar */
+.conversations-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.conversations-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.conversations-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.conversations-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+{% endblock %}

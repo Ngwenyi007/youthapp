@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="documents-container">
+    <div class="page-header">
+        <h1>📁 Documents</h1>
+        {% if 'member' not in user.rank.lower() %}
+        <button onclick="showUploadModal()" class="btn btn-primary">📤 Upload Document</button>
+        {% endif %}
+    </div>
+
+    <!-- Upload Modal -->
+    {% if 'member' not in user.rank.lower() %}
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📤 Upload Document</h3>
+                <button onclick="closeUploadModal()" class="close-btn">×</button>
+            </div>
+            <form method="POST" action="/upload_document" enctype="multipart/form-data" class="upload-form">
+                <div class="form-group">
+                    <label for="document">Select File</label>
+                    <input type="file" id="document" name="document" required 
+                           accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif">
+                    <small class="file-hint">
+                        Supported formats: PDF, Word, Excel, PowerPoint, Text, Images
+                        <br>Max size: 16MB
+                    </small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeUploadModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">📤 Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Documents Grid -->
+    <div class="documents-content">
+        {% if documents %}
+        <div class="documents-grid">
+            {% for document in documents %}
+            <div class="document-card">
+                <div class="document-icon">
+                    {% if document.filename.endswith(('.pdf')) %}
+                        <span class="file-icon pdf">📄</span>
+                    {% elif document.filename.endswith(('.doc', '.docx')) %}
+                        <span class="file-icon word">📝</span>
+                    {% elif document.filename.endswith(('.xls', '.xlsx')) %}
+                        <span class="file-icon excel">📊</span>
+                    {% elif document.filename.endswith(('.ppt', '.pptx')) %}
+                        <span class="file-icon powerpoint">📑</span>
+                    {% elif document.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                        <span class="file-icon image">🖼️</span>
+                    {% else %}
+                        <span class="file-icon generic">📋</span>
+                    {% endif %}
+                </div>
+                
+                <div class="document-info">
+                    <h4 class="document-name" title="{{ document.filename }}">
+                        {{ document.filename[:30] }}{% if document.filename|length > 30 %}...{% endif %}
+                    </h4>
+                    <div class="document-meta">
+                        <span class="file-size">{{ (document.size / 1024) | round(1) }} KB</span>
+                        <span class="upload-date">{{ document.uploaded[:10] }}</span>
+                    </div>
+                </div>
+                
+                <div class="document-actions">
+                    <a href="/uploads/documents/{{ document.filename }}" 
+                       target="_blank" class="action-btn view-btn" title="View">
+                        👁️
+                    </a>
+                    <a href="/uploads/documents/{{ document.filename }}" 
+                       download class="action-btn download-btn" title="Download">
+                        ⬇️
+                    </a>
+                    {% if 'chairman' in user.rank.lower() %}
+                    <button onclick="deleteDocument('{{ document.filename }}')" 
+                            class="action-btn delete-btn" title="Delete">
+                        🗑️
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-documents">
+            <div class="empty-state">
+                <span class="empty-icon">📁</span>
+                <h3>No documents yet</h3>
+                <p>
+                    {% if 'member' in user.rank.lower() %}
+                    Documents shared by your leaders will appear here.
+                    {% else %}
+                    Upload documents to share with your members.
+                    {% endif %}
+                </p>
+                {% if 'member' not in user.rank.lower() %}
+                <button onclick="showUploadModal()" class="btn btn-primary">Upload First Document</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function showUploadModal() {
+    document.getElementById('uploadModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function deleteDocument(filename) {
+    if (confirm('Are you sure you want to delete this document?')) {
+        // Implement delete functionality
+        alert('Delete functionality coming soon!');
+    }
+}
+
+// File upload validation
+document.getElementById('document')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const maxSize = 16 * 1024 * 1024; // 16MB
+    const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'image/png',
+        'image/jpeg',
+        'image/gif'
+    ];
+    
+    if (file.size > maxSize) {
+        alert('File size must be less than 16MB');
+        e.target.value = '';
+        return;
+    }
+    
+    if (!allowedTypes.includes(file.type)) {
+        alert('File type not supported. Please select a valid document or image file.');
+        e.target.value = '';
+        return;
+    }
+    
+    // Show file preview info
+    const fileInfo = document.createElement('div');
+    fileInfo.className = 'file-preview';
+    fileInfo.innerHTML = `
+        <strong>Selected:</strong> ${file.name} 
+        <span class="file-size">(${(file.size / 1024).toFixed(1)} KB)</span>
+    `;
+    
+    // Remove any existing preview
+    const existingPreview = document.querySelector('.file-preview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    e.target.parentNode.appendChild(fileInfo);
+});
+
+// Close modal on outside click
+document.getElementById('uploadModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeUploadModal();
+    }
+});
+
+// Escape key to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeUploadModal();
+    }
+});
+</script>
+
+<style>
+.documents-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: #333;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlide 0.3s ease-out;
+}
+
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #666;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.close-btn:hover {
+    background: #f8f9fa;
+}
+
+.upload-form {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.form-group input[type="file"]:hover {
+    border-color: #007bff;
+}
+
+.file-hint {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 5px;
+    display: block;
+}
+
+.file-preview {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    font-size: 0.9em;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Documents Grid */
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.document-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.document-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.document-icon {
+    margin-bottom: 15px;
+}
+
+.file-icon {
+    font-size: 3em;
+    padding: 20px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.file-icon.pdf {
+    background: #ffe6e6;
+    color: #d32f2f;
+}
+
+.file-icon.word {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.file-icon.excel {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+
+.file-icon.powerpoint {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.file-icon.image {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.file-icon.generic {
+    background: #f5f5f5;
+    color: #616161;
+}
+
+.document-info {
+    margin-bottom: 15px;
+    flex: 1;
+}
+
+.document-name {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.1em;
+    word-break: break-word;
+}
+
+.document-meta {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.document-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    font-size: 1.1em;
+}
+
+.view-btn {
+    background: #007bff;
+    color: white;
+}
+
+.view-btn:hover {
+    background: #0056b3;
+}
+
+.download-btn {
+    background: #28a745;
+    color: white;
+}
+
+.download-btn:hover {
+    background: #1e7e34;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+}
+
+.no-documents {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #666;
+    max-width: 400px;
+}
+
+.empty-icon {
+    font-size: 5em;
+    display: block;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.empty-state p {
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .documents-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .document-card {
+        padding: 15px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .document-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* Upload progress (for future enhancement) */
+.upload-progress {
+    margin-top: 15px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #007bff;
+    transition: width 0.3s ease;
+}
+</style>
+{% endblock %}
