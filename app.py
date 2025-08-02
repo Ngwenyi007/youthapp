@@ -7,6 +7,7 @@ import string
 from functools import wraps
 import uuid
 from werkzeug.security import generate_password_hash
+import fcntl
 
 
 app = Flask(__name__)
@@ -23,6 +24,18 @@ role_definitions = {
     'Diocese': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'National': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
 }
+
+def save_to_json(data, filename):
+    with open(filename, "r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)  # Lock file
+        try:
+            existing = json.load(f)
+            existing.append(data)
+            f.seek(0)
+            json.dump(existing, f)
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)  # Unlock
+
 def fix_missing_post_ids():
     try:
         with open("posts.json", "r") as f:
