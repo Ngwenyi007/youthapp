@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="prayers-container">
+    <div class="page-header">
+        <h1>🙏 Prayer Requests & Testimonies</h1>
+    </div>
+
+    <!-- Add Prayer/Testimony Form -->
+    <div class="add-prayer-section">
+        <div class="prayer-tabs">
+            <button class="tab-btn active" onclick="switchTab('request')">📝 Prayer Request</button>
+            <button class="tab-btn" onclick="switchTab('testimony')">✨ Testimony</button>
+        </div>
+        
+        <form method="POST" action="/add_prayer" class="prayer-form">
+            <div class="form-content">
+                <div class="tab-content" id="request-tab">
+                    <input type="hidden" name="type" value="request">
+                    <textarea name="content" placeholder="Share your prayer request..." required rows="4"></textarea>
+                </div>
+                <div class="tab-content hidden" id="testimony-tab">
+                    <input type="hidden" name="type" value="testimony">
+                    <textarea name="content" placeholder="Share your testimony..." required rows="4"></textarea>
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="anonymous">
+                        Post anonymously
+                    </label>
+                    <button type="submit" class="submit-btn">🙏 Share</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="prayers-grid">
+        <!-- Prayer Requests Section -->
+        <div class="prayer-section">
+            <h2>🙏 Prayer Requests</h2>
+            <div class="prayer-list">
+                {% for request in prayer_requests %}
+                <div class="prayer-card request-card">
+                    <div class="prayer-header">
+                        <span class="author">{{ request.author }}</span>
+                        <span class="time">{{ request.time_ago }}</span>
+                    </div>
+                    <div class="prayer-content">
+                        <p>{{ request.content }}</p>
+                    </div>
+                    <div class="prayer-actions">
+                        <button onclick="prayFor('{{ request.id }}')" class="pray-btn">
+                            🙏 <span id="prayer-count-{{ request.id }}">{{ request.prayers_count or 0 }}</span> Praying
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not prayer_requests %}
+                <div class="no-content">
+                    <p>No prayer requests yet. Be the first to share!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Testimonies Section -->
+        <div class="prayer-section">
+            <h2>✨ Testimonies</h2>
+            <div class="prayer-list">
+                {% for testimony in testimonies %}
+                <div class="prayer-card testimony-card">
+                    <div class="prayer-header">
+                        <span class="author">{{ testimony.author }}</span>
+                        <span class="time">{{ testimony.time_ago }}</span>
+                    </div>
+                    <div class="prayer-content">
+                        <p>{{ testimony.content }}</p>
+                    </div>
+                    <div class="prayer-actions">
+                        <button class="praise-btn">
+                            ✨ Praise God!
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not testimonies %}
+                <div class="no-content">
+                    <p>No testimonies yet. Share how God has blessed you!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(type) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    document.getElementById(type + '-tab').classList.remove('hidden');
+}
+
+function prayFor(prayerId) {
+    fetch(`/pray_for/${prayerId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            const countSpan = document.getElementById(`prayer-count-${prayerId}`);
+            countSpan.textContent = data.prayers_count;
+            
+            // Show feedback
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '🙏 Prayed!';
+            btn.style.background = '#28a745';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+            }, 2000);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+
+<style>
+.prayers-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: #333;
+    font-size: 2.5em;
+}
+
+.add-prayer-section {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.prayer-tabs {
+    display: flex;
+    background: #f8f9fa;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-btn.active {
+    background: white;
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.tab-btn:hover {
+    background: #e9ecef;
+}
+
+.prayer-form {
+    padding: 25px;
+}
+
+.tab-content {
+    margin-bottom: 20px;
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+.tab-content textarea {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.3s;
+}
+
+.tab-content textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    transform: scale(1.2);
+}
+
+.submit-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.submit-btn:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+
+.prayers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.prayer-section h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.prayer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.prayer-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.prayer-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.request-card {
+    border-left: 5px solid #007bff;
+}
+
+.testimony-card {
+    border-left: 5px solid #ffc107;
+}
+
+.prayer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.author {
+    font-weight: bold;
+    color: #333;
+}
+
+.time {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.prayer-content {
+    margin-bottom: 15px;
+}
+
+.prayer-content p {
+    margin: 0;
+    line-height: 1.6;
+    color: #555;
+}
+
+.prayer-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.pray-btn, .praise-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pray-btn:hover {
+    background: #0056b3;
+    transform: scale(1.05);
+}
+
+.praise-btn {
+    background: #ffc107;
+    color: #333;
+}
+
+.praise-btn:hover {
+    background: #e0a800;
+    transform: scale(1.05);
+}
+
+.no-content {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.no-content p {
+    margin: 0;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .prayers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .submit-btn {
+        text-align: center;
+    }
+    
+    .prayer-tabs {
+        flex-direction: column;
+    }
+}
+
+/* Animation for prayer counter */
+@keyframes countUp {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.pray-btn span {
+    animation: countUp 0.5s ease-in-out;
+}
+</style>
+{% endblock %}
