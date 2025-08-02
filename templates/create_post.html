@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}📝 Create Post{% endblock %}
+{% block content %}
+<style>
+  .container {
+    max-width: 650px;
+    margin: 2rem auto;
+    background: var(--card-bg, #fff);
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  textarea {
+    width: 100%;
+    height: 140px;
+    padding: 0.75rem;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+  .btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-post {
+    background: #28a745;
+    color: white;
+  }
+  .btn-cancel {
+    background: #dc3545;
+    color: white;
+    margin-left: 10px;
+  }
+  .post {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-top: 1.5rem;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  }
+  .comment-box {
+    margin-top: 1rem;
+  }
+  .comment-box textarea {
+    height: 80px;
+  }
+  .comment-box button {
+    background: #007bff;
+    color: white;
+  }
+  .timestamp {
+    color: #888;
+    font-size: 0.9rem;
+  }
+  .emoji-title {
+    font-size: 1.4rem;
+  }
+</style>
+
+<div class="container">
+  <h2 class="emoji-title">📝 Create New Post</h2>
+  <p><strong>👤 You are:</strong> {{ user.rank }} | <strong>🎯 Target:</strong> {{ target_level }}</p>
+
+  <form method="post">
+    <textarea name="content" placeholder="Write something uplifting..." required></textarea>
+    <br>
+    <button type="submit" class="btn btn-post">📤 Post</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-cancel">↩️ Cancel</a>
+  </form>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mt-4 p-3 rounded {% if category == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <h2 class="mt-6 text-center">📑 My Posts</h2>
+
+  {% if user_posts %}
+    {% for post in user_posts %}
+      <div class="post">
+        <div class="flex justify-between">
+          <p class="timestamp">📅 {{ post.timestamp_human or post.time_ago }}</p>
+          {% if post.pinned %}
+            <span class="text-yellow-500 font-bold">📌 Pinned</span>
+          {% endif %}
+        </div>
+        <p class="mt-2">{{ post.content }}</p>
+
+        <div class="flex justify-between items-center mt-3 text-sm text-gray-600">
+          <span>💬 {{ post.comments | length }} Comments</span>
+          <div class="flex gap-2">
+            <a href="{{ url_for('view_comments', post_id=post.id) }}">👁️ View</a>
+
+            <form method="POST" action="{{ url_for('pin_post', post_id=post.id) }}" style="display:inline;">
+              <button type="submit">{{ '📌 Unpin' if post.pinned else '📌 Pin' }}</button>
+            </form>
+
+            <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
+              <button type="submit">🗑️ Delete</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-box">
+          <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}">
+            <textarea name="comment" placeholder="💭 Add your comment..." required></textarea>
+            <button type="submit" class="btn mt-2">➕ Comment</button>
+          </form>
+
+          <!-- Existing Comments -->
+          {% if post.comments %}
+            <div class="mt-2">
+              {% for comment in post.comments %}
+                <p><strong>👤 {{ comment.user }}:</strong> {{ comment.text }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-center mt-4 text-gray-500">📭 No posts yet. Start the conversation!</p>
+  {% endif %}
+
+  <div class="text-center mt-6">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-cancel">← Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

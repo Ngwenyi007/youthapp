@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📌 {{ post.title }}</h2>
+<p><strong>{{ post.author }}</strong> ({{ post.rank }})</p>
+<p>{{ post.timestamp }}</p>
+<p>{{ post.content }}</p>
+
+<h3>💬 Comments</h3>
+{% for c in post.comments %}
+    <div style="border:1px solid #ccc; padding:5px; margin:5px;">
+        <strong>{{ c.author }}</strong> ({{ c.rank }}) said:
+        <p>{{ c.content }}</p>
+        <small>{{ c.timestamp }}</small>
+    </div>
+{% else %}
+    <p>No comments yet.</p>
+{% endfor %}
+{% if post.code == user.code %}
+  <form action="{{ url_for('pin_post', post_id=post.id) }}" method="post">
+    <button type="submit" {% if post.pinned %}disabled{% endif %}>📌 Pin</button>
+  </form>
+  <form action="{{ url_for('unpin_post', post_id=post.id) }}" method="post">
+    <button type="submit" {% if not post.pinned %}disabled{% endif %}>📍 Unpin</button>
+  </form>
+  <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this post?');">
+    <button type="submit">🗑️ Delete</button>
+  </form>
+{% endif %}
+<form method="POST">
+    <textarea name="comment" placeholder="Write a comment..." required></textarea><br>
+    <button type="submit">💬 Post Comment</button>
+</form>
+{% endblock %}

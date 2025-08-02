@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Chairman's Dashboard{% endblock %}
+
+{% block content %}
+<style>
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+thead {
+  background-color: #f0f0f0;
+}
+.stats ul {
+  list-style: none;
+  padding: 0;
+}
+.stats ul li {
+  margin-bottom: 6px;
+  font-size: 1.1em;
+}
+</style>
+<div class="container">
+  <h1 class="title">📊 Chairman's Member Dashboard</h1>
+
+ <div class="mb-4">
+  <a href="{{ url_for('dashboard') }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+    🔙 Back to Dashboard
+  </a>
+</div>
+  <section class="box">
+    <h2 class="subtitle">📈 Member Statistics</h2>
+    <ul>
+      <li>Total Members: <strong>{{ stats.total }}</strong></li>
+      <li>👦 Male: <strong>{{ stats.male }}</strong></li>
+      <li>👧 Female: <strong>{{ stats.female }}</strong></li>
+      <li>🎓 Primary: <strong>{{ stats.education.primary }}</strong></li>
+      <li>🏫 Secondary: <strong>{{ stats.education.secondary }}</strong></li>
+      <li>🎓 University: <strong>{{ stats.education.university }}</strong></li>
+      <li>📚 TVET: <strong>{{ stats.education.tveta }}</strong></li>
+      <li>♿ Disabilities: <strong>{{ stats.disabled }}</strong></li>
+      <li>🕊️ Chaplaincy: <strong>{{ stats.departments.chaplaincy }}</strong></li>
+      <li>📁 Secretariat: <strong>{{ stats.departments.secretariat }}</strong></li>
+      <li>💰 Treasury: <strong>{{ stats.departments.treasury }}</strong></li>
+    </ul>
+  </section>
+
+  <section class="box mt-5">
+    <h2 class="subtitle">👥 All Members in Your Jurisdiction</h2>
+    {% if members %}
+    <div class="table-container">
+      <table class="table is-striped is-fullwidth">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Age</th>
+            <th>Education</th>
+            <th>Disability</th>
+            <th>Department</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in members %}
+          <tr>
+            <td>{{ m.fname }} {{ m.lname }}</td>
+            <td>{{ m.gender }}</td>
+            <td>{{ m.age }}</td>
+            <td>{{ m.education }}</td>
+            <td>{{ m.disability }}</td>
+            <td>{{ m.department }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>No members found in your jurisdiction.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
