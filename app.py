@@ -1,13 +1,21 @@
-<<<<<<< HEAD
-from flask import Flask, render_template, request, redirect, session, flash, jsonify, send_from_directory
+from flask import Flask, render_template, send_from_directory, request, redirect, session, flash, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room
-import uuid, json, os
+import uuid, json, os, re
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import base64
 from PIL import Image
 import io
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from datetime import datetime
+from dateutil.relativedelta import relativedelta  # Usisahau hii
+import random
+import string
+from functools import wraps
+import fcntl
+
+
 
 app = Flask(__name__)
 app.secret_key = 'youth_secret_key'
@@ -32,28 +40,12 @@ PRAYER_FILE = 'prayers.json'
 ATTENDANCE_FILE = 'attendance.json'
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-=======
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from datetime import datetime
-import json, os, re
-from dateutil.relativedelta import relativedelta  # Usisahau hii
-import random
-import string
-from functools import wraps
-import uuid
-from werkzeug.security import generate_password_hash
-import fcntl
-
-
-app = Flask(__name__)
-app.secret_key = "your_secret_key"
-
-USERS_FILE = 'users.json'
-POSTS_FILE = 'posts.json'
-
+username = "code"
+# Upload folder configuration
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'documents'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'profiles'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'events'), exist_ok=True)
 # 🧠 Automatically adds "organising secretary" to all levels
 role_definitions = {
     'Local': ['member', 'chairman', 'secretary', 'organising secretary', 'chaplain', 'matron', 'patron', 'treasurer'],
@@ -62,8 +54,8 @@ role_definitions = {
     'Diocese': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'National': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
 }
->>>>>>> main
-
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 def save_to_json(data, filename):
     with open(filename, "r+") as f:
         fcntl.flock(f, fcntl.LOCK_EX)  # Lock file
@@ -76,26 +68,43 @@ def save_to_json(data, filename):
             fcntl.flock(f, fcntl.LOCK_UN)  # Unlock
 
 def fix_missing_post_ids():
-    try:
-<<<<<<< HEAD
-        with open(file, 'r') as f:
-            return json.load(f)
-    except:
-        return {} if file != POST_FILE else []
-=======
-        with open("posts.json", "r") as f:
-            posts = json.load(f)
-    except Exception:
+    # Load posts
+    if os.path.exists(POST_FILE):
+        try:
+            with open(POST_FILE, "r") as f:
+                posts = json.load(f)
+        except Exception:
+            posts = []
+    else:
         posts = []
->>>>>>> main
 
     updated = False
+
+    # Add IDs where missing
     for post in posts:
         if 'id' not in post:
             post['id'] = str(uuid.uuid4())
             updated = True
 
-<<<<<<< HEAD
+    # Save if updated
+    if updated:
+        with open(POST_FILE, "w") as f:
+            json.dump(posts, f, indent=4)
+
+    return updated
+def get_current_user():
+    """Return the logged-in user dict from users.json or None if not found."""
+    users = load_json(USER_FILE)
+
+    # Support both old and new session formats
+    code = session.get('username') or session.get('user', {}).get('code')
+
+    if not code:
+        return None
+
+    # Find matching user in the list
+    return next((u for u in users if u.get('code') == code), None)
+
 def create_notification(user_id, title, message, type='info', data=None):
     """Create a notification for a user"""
     notifications = load_json(NOTIFICATION_FILE)
@@ -125,16 +134,13 @@ def format_timestamp(iso_time):
         return f"{seconds // 60} minutes ago"
     elif seconds < 86400:
         return f"{seconds // 3600} hours ago"
-=======
     if updated:
         with open("posts.json", "w") as f:
             json.dump(posts, f, indent=4)
         print("✅ Missing post IDs assigned and saved.")
->>>>>>> main
     else:
         print("✅ All posts already have IDs.")
 
-<<<<<<< HEAD
 def resize_image(image_path, max_size=(300, 300)):
     """Resize image to maximum dimensions while maintaining aspect ratio"""
     try:
@@ -193,7 +199,6 @@ def handle_message(data):
         'info',
         {'message_id': message['id']}
     )
-=======
 fix_missing_post_ids()
 def login_required(f):
     @wraps(f)
@@ -203,16 +208,6 @@ def login_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
->>>>>>> main
-
-def load_data(file_path):
-    if not os.path.exists(file_path):
-        return []
-    try:
-        with open(file_path, 'r') as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        return []  # Return empty list if file is empty or invalid JSON
 
 def save_posts(posts):
     with open(POSTS_FILE, 'w') as f:
@@ -339,110 +334,32 @@ def format_timestamp_filter(timestamp):
     except:
         return timestamp
 @app.route('/')
-<<<<<<< HEAD
 def home():
     return redirect('/login')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        users = load_json(USER_FILE)
-
-        full_name = request.form['full_name']
-        age = request.form['age']
-        local_church = request.form['local_church']
-        parish = request.form['parish']
-        denary = request.form['denary']
-        diocese = request.form['diocese']
-        rank = request.form['rank']
-        password = request.form['password']
-        email = request.form.get('email', '')
-        phone = request.form.get('phone', '')
-        bio = request.form.get('bio', '')
-
-        # Enforce one leader per rank per church level (except member)
-        if rank.lower() != 'member':
-            for u in users.values():
-                if (
-                    u['rank'].lower() == rank.lower() and
-                    u['diocese'] == diocese and
-                    u['denary'] == denary and
-                    u['parish'] == parish and
-                    u['local_church'] == local_church
-                ):
-                    return f"{rank} already exists in this location. Only one leader allowed per position."
-
-        username = str(uuid.uuid4())[:8]
-        users[username] = {
-            "full_name": full_name,
-            "age": age,
-            "local_church": local_church,
-            "parish": parish,
-            "denary": denary,
-            "diocese": diocese,
-            "rank": rank,
-            "password": password,
-            "username": username,
-            "email": email,
-            "phone": phone,
-            "bio": bio,
-            "profile_picture": None,
-            "joined_date": datetime.now().isoformat(),
-            "last_active": datetime.now().isoformat(),
-            "settings": {
-                "email_notifications": True,
-                "push_notifications": True,
-                "privacy_level": "friends"
-            }
-        }
-
-        save_json(USER_FILE, users)
-        session['username'] = username
-        
-        # Create welcome notification
-        create_notification(
-            username, 
-            'Welcome!', 
-            f'Welcome to the Youth App, {full_name}! Complete your profile to get started.',
-            'success'
-        )
-        
-        return redirect('/dashboard')
-
-    return render_template('register.html')
-=======
 def index():
     return redirect(url_for('login'))
->>>>>>> main
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        code = request.form['code']
-        password = request.form['password']
-<<<<<<< HEAD
-        if username in users and users[username]['password'] == password:
-            session['username'] = username
-            # Update last active
-            users[username]['last_active'] = datetime.now().isoformat()
-            save_json(USER_FILE, users)
-            return redirect('/dashboard')
-        else:
-            flash("Invalid username or password.")
-            return redirect('/login')
-=======
+        code = request.form.get('code', '').strip()
+        password = request.form.get('password', '').strip()
 
+        # Load users from JSON
         try:
             with open('users.json', 'r') as f:
                 users = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             users = []
 
+        # Search for matching user
         for user in users:
             if user.get('code') == code and user.get('password') == password:
+                # ✅ Store both for compatibility
+                session['username'] = user['code']
                 session['user'] = {
                     'code': user['code'],
-                    'fullname': user['fullname'],
+                    'full_name': user['full_name'],
                     'rank': user['rank'],
                     'local_church': user['local_church'],
                     'parish': user['parish'],
@@ -450,19 +367,27 @@ def login():
                     'diocese': user['diocese']
                 }
                 session.permanent = True
+
+                # Update last active
+                user['last_active'] = datetime.now().isoformat()
+                with open('users.json', 'w') as f:
+                    json.dump(users, f, indent=4)
+
                 flash('✅ Login successful!', 'success')
                 return redirect(url_for('dashboard'))
 
         flash('❌ Invalid code or password.', 'error')
         return redirect(url_for('login'))
 
->>>>>>> main
     return render_template('login.html')
+
+
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     flash("You have been logged out.")
     return redirect(url_for('login'))
+
 @app.route('/chairmans')
 def chairman_dashboard():
     if 'user' not in session:
@@ -505,69 +430,91 @@ def chairman_dashboard():
 
     return render_template('chairman_dashboard.html', members=members, stats=stats, user=user)
 
-@app.route('/dashboard')
+
+
+
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'user' not in session:
         flash('Please log in to continue.', 'warning')
         return redirect(url_for('login'))
 
-<<<<<<< HEAD
+    # Load all data files
     users = load_json(USER_FILE)
     posts = load_json(POST_FILE)
     comments = load_json(COMMENT_FILE)
     events = load_json(EVENT_FILE)
     notifications = load_json(NOTIFICATION_FILE)
-    
-    username = session['username']
-    user = users[username]
-=======
-    user = session['user']
-    code = user['code']
-    fullname = user.get('fullname')
-    rank = user.get('rank')
-    gender = user.get('gender')
-    dob = user.get('dob')
-    phone = user.get('phone')
-    email = user.get('email')
-    local_church = user.get('local_church')
-    parish = user.get('parish')
-    denary = user.get('denary')
-    diocese = user.get('diocese')
->>>>>>> main
+
+    # Get current user from session
+    session_user = session['user']
+    code = session_user['code']
+
+    # Find current user in JSON list
+    current_user = next((u for u in users if u.get('code') == code), None)
+    if not current_user:
+        flash("User not found.", "error")
+        return redirect(url_for('login'))
+
+    # Extract user details
+    full_name = current_user.get('full_name')
+    rank = current_user.get('rank')
+    gender = current_user.get('gender')
+    dob = current_user.get('dob')
+    phone = current_user.get('phone')
+    email = current_user.get('email')
+    local_church = current_user.get('local_church')
+    parish = current_user.get('parish')
+    denary = current_user.get('denary')
+    diocese = current_user.get('diocese')
 
     # Filters
     filter_level = request.args.get('filter_level', 'all')
     filter_department = request.args.get('filter_department', 'all')
     search_query = request.args.get('search', '').lower()
 
-    # Load users
-    try:
-        with open('users.json') as f:
-            users = json.load(f)
-    except FileNotFoundError:
-        users = []
-
-    # Current user full data
-    current_user = next((u for u in users if u['code'] == code), None)
-    if not current_user:
-        flash("User not found.", "error")
-        return redirect(url_for('login'))
-
-    # Load posts
-    try:
-        with open('posts.json') as f:
-            all_posts = json.load(f)
-    except FileNotFoundError:
-        all_posts = []
-
     # Determine jurisdiction level
     user_level = None
     for level in ['local_church', 'parish', 'denary', 'diocese']:
-        if user.get(level):
+        if current_user.get(level):
             user_level = level
             break
 
-    # Filter posts in jurisdiction
+    # Handle new post creation
+    if request.method == 'POST' and 'member' not in rank.lower():
+        content = request.form['content']
+        post_type = request.form.get('post_type', 'general')
+
+        post = {
+            "id": str(uuid.uuid4()),
+            "author": full_name,
+            "username": code,
+            "content": content,
+            "type": post_type,
+            "timestamp": datetime.now().isoformat(),
+            "pinned": False,
+            "likes": [],
+            "diocese": diocese,
+            "denary": denary,
+            "parish": parish,
+            "local_church": local_church
+        }
+        posts.insert(0, post)
+        save_json(POST_FILE, posts)
+
+        # Notify members in jurisdiction if announcement/urgent
+        if post_type in ['announcement', 'urgent']:
+            for u in users:
+                if u['code'] != code and is_within_boundary(u):
+                    create_notification(
+                        u['code'],
+                        f'New {post_type.title()}',
+                        f'{full_name} posted: {content[:50]}...',
+                        'warning' if post_type == 'urgent' else 'info',
+                        {'post_id': post['id']}
+                    )
+
+    # Jurisdiction check
     def in_jurisdiction(post):
         return (
             post.get('diocese') == diocese and
@@ -576,48 +523,9 @@ def dashboard():
             post.get('local_church') == local_church
         )
 
-<<<<<<< HEAD
-    if request.method == 'POST' and 'member' not in user['rank'].lower():
-        content = request.form['content']
-        post_type = request.form.get('post_type', 'general')
-        
-        post = {
-            "id": str(uuid.uuid4()),
-            "author": user['full_name'],
-            "username": username,
-            "content": content,
-            "type": post_type,  # general, announcement, urgent
-            "timestamp": datetime.now().isoformat(),
-            "pinned": False,
-            "likes": [],
-            "diocese": user['diocese'],
-            "denary": user['denary'],
-            "parish": user['parish'],
-            "local_church": user['local_church']
-        }
-        posts.insert(0, post)
-        save_json(POST_FILE, posts)
-        
-        # Notify all members in the same boundary about new post
-        if post_type in ['announcement', 'urgent']:
-            for u_id, u_data in users.items():
-                if u_id != username and is_within_boundary(u_data):
-                    create_notification(
-                        u_id,
-                        f'New {post_type.title()}',
-                        f'{user["full_name"]} posted: {content[:50]}...',
-                        'warning' if post_type == 'urgent' else 'info',
-                        {'post_id': post['id']}
-                    )
-
-    # Get recent posts
-    for post in posts:
-        if 'timestamp' not in post:
-            post['timestamp'] = datetime.now().isoformat()
-=======
-    # Filtering logic
+    # Filter posts
     filtered_posts = []
-    for post in all_posts:
+    for post in posts:
         if not in_jurisdiction(post):
             continue
         if filter_level != 'all' and post.get('level') != filter_level:
@@ -626,14 +534,19 @@ def dashboard():
             continue
         if search_query and search_query not in post.get('content', '').lower():
             continue
+        if 'type' not in post:
+            post['type'] = 'general'
         filtered_posts.append(post)
 
-    # Sort: pinned posts first, then newest
-    filtered_posts.sort(key=lambda x: (not x.get('pinned', False), x.get('timestamp', '')), reverse=True)
+    # Sort: pinned first, then newest
+    filtered_posts.sort(
+        key=lambda x: (not x.get('pinned', False), x.get('timestamp', '')),
+        reverse=True
+    )
 
-    # Members list (for chairman only)
+    # Members list (chairman only)
     members = []
-    if current_user.get('role') == 'chairman':
+    if current_user.get('role', '').lower() == 'chairman':
         members = [
             u for u in users if
             u.get('diocese') == diocese and
@@ -642,15 +555,22 @@ def dashboard():
             u.get('local_church') == local_church
         ]
 
-    # Member statistics
+    # Stats
     total_members = len(members)
     male_members = sum(1 for m in members if m.get('gender') == 'Male')
     female_members = sum(1 for m in members if m.get('gender') == 'Female')
 
+    # Count unread notifications for this user
+    unread_notifications = sum(
+        1 for n in notifications
+        if n.get('user_code') == code and not n.get('read', False)
+    )
+
+    # ✅ Always return here, outside the loop
     return render_template(
         'dashboard.html',
-        user=user,
-        fullname=fullname,
+        user=current_user,
+        full_name=full_name,
         rank=rank,
         posts=filtered_posts,
         members=members,
@@ -669,10 +589,12 @@ def dashboard():
         parish=parish,
         denary=denary,
         diocese=diocese,
-       time_since=time_since,
-       user_rank=user.get('rank'),
-       user_code=user.get('code')
+        time_since=time_since,
+        user_rank=rank,
+        user_code=code,
+        unread_notifications=unread_notifications
     )
+
 
 @app.route('/members')
 def members():
@@ -726,7 +648,7 @@ def filter_view():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        data = load_data(USERS_FILE)
+        data = load_data(USER_FILE)
         form = request.form
 
         # Auto-generate unique 5-character code
@@ -736,14 +658,15 @@ def register():
             if code not in existing_codes:
                 break
 
-        fullname = form['fullname']
+        full_name = form['full_name']
         password = form['password']
         phone = form['phone']
         gender = form['gender']
         age = form['age']
-        church_level = form['church_level']
+        level = form['level']
+        email = form['email']
         role = form['role']
-        rank = f"{church_level} {role}".lower()
+        rank = f"{level} {role}".lower()
         birth_day = form.get('birth_day')
         birth_month = form.get('birth_month')
         birth_year = form.get('birth_year')
@@ -758,7 +681,7 @@ def register():
         occupation_status = form.get('occupation_status', '')
         institution_type = form.get('institution_type', '')
         talents = form.get('talents', '')
-        skills = form.get('skills', '')
+        bio = form.get('bio', '')
         # Check for leader uniqueness
         if role in ['chairman', 'secretary', 'treasurer', 'chaplain', 'matron', 'patron', 'organising secretary']:
             for u in data:
@@ -772,16 +695,18 @@ def register():
 
         user = {
             'id': str(uuid.uuid4()),  # ✅ assign unique id
-            'fullname': fullname,
+            'full_name': full_name,
             'code': code,
             'password': password,
             'phone': phone,
             'gender': gender,
+            'email' : email ,
             'age': age,
             'rank': rank,
             'local_church': local_church,
             'parish': parish,
             'dob': dob,
+            'username':code,
             'denary': denary,
             'diocese': diocese,
             'residence': residence,
@@ -790,19 +715,24 @@ def register():
             'occupation_status': occupation_status,
             'institution_type': institution_type,
             'talents': talents,
-            'skills': skills,
-            'registration_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        }
-
+            'bio': bio,
+            "bio": bio,
+            "profile_picture": None,
+            "joined_date": datetime.now().isoformat(),
+            "last_active": datetime.now().isoformat(),
+            'registration_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "settings": {
+                "email_notifications": True,
+                "push_notifications": True,
+                "privacy_level": "friends"
+                         }
+          }
         data.append(user)
-        save_data(USERS_FILE, data)
-        return redirect(url_for('login'))
->>>>>>> main
+        save_data(USER_FILE, data)
+        return redirect(url_for('dashboard'))
 
     return render_template('register.html')
 
-<<<<<<< HEAD
     for p in visible_posts:
         p['time_ago'] = format_timestamp(p['timestamp'])
         p['comments'] = comments.get(p['id'], [])
@@ -842,7 +772,7 @@ def comment(post_id):
         "author": user['full_name'],
         "text": content,
         "timestamp": datetime.now().isoformat()
-=======
+          }
 @app.route('/comments/<post_id>')
 def view_comments(post_id):
     user = get_logged_in_user()
@@ -872,7 +802,7 @@ def edit_member(user_code):
 
     if request.method == 'POST':
         # Update all fields from form
-        user['fullname'] = request.form['fullname']
+        user['full_name'] = request.form['full_name']
         user['phone'] = request.form['phone']
         user['gender'] = request.form['gender']
         user['age'] = request.form['age']
@@ -972,7 +902,6 @@ def create_post():
         'parish': 'parish',
         'denary': 'denary',
         'diocese': 'diocese'
->>>>>>> main
     }
     target_level = None
     for level_key, level_field in level_map.items():
@@ -990,7 +919,7 @@ def create_post():
 
         post = {
             'id': str(uuid.uuid4()),
-            'author': user['fullname'],
+            'author': user['full_name'],
             'author_code': user['code'],
             'rank': user['rank'],
             'content': content,
@@ -1045,7 +974,7 @@ def view_post(post_id):
         if comment:
             timestamp = datetime.now().isoformat()
             post.setdefault('comments', []).append({
-                'author': user['fullname'],
+                'author': user['full_name'],
                 'rank': user['rank'],
                 'church': user.get('local_church'),
                 'timestamp': timestamp,
@@ -1113,7 +1042,6 @@ def add_comment(post_id):
     save_json('posts.json', posts)
     return redirect(url_for('view_posts.html'))
 
-<<<<<<< HEAD
 @app.route('/like_post/<post_id>', methods=['POST'])
 def like_post(post_id):
     if 'username' not in session:
@@ -1142,44 +1070,73 @@ def like_post(post_id):
     
     return jsonify({'error': 'Post not found'}), 404
 
+
+@app.route('/rsvp_event/<event_id>', methods=['POST'])
+def rsvp_event(event_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+# -----------------------
 # Event Management Routes
+# -----------------------
+
 @app.route('/events')
 def events():
-    if 'username' not in session:
-        return redirect('/login')
-    
-    users = load_json(USER_FILE)
-    events = load_json(EVENT_FILE)
-    user = users[session['username']]
-    
+    current_user = get_current_user()
+    if not current_user:
+        flash("Please log in to continue.", "warning")
+        return redirect(url_for('login'))
+
+    events_data = load_json(EVENT_FILE)
+
     def is_within_boundary(event):
         return (
-            event['diocese'] == user['diocese'] and
-            event['denary'] == user['denary'] and
-            event['parish'] == user['parish'] and
-            event['local_church'] == user['local_church']
+            event.get('diocese') == current_user.get('diocese') and
+            event.get('denary') == current_user.get('denary') and
+            event.get('parish') == current_user.get('parish') and
+            event.get('local_church') == current_user.get('local_church')
         )
-    
-    visible_events = [e for e in events.get('events', []) if is_within_boundary(e)]
-    visible_events.sort(key=lambda e: e['start_date'])
-    
-    return render_template('events.html', events=visible_events, user=user)
+
+    # Handle both dict-based and list-based formats
+    if isinstance(events_data, dict):
+        event_list = events_data.get('events', [])
+    else:  # list format
+        event_list = events_data
+
+    visible_events = [e for e in event_list if is_within_boundary(e)]
+    visible_events.sort(key=lambda e: e.get('start_date', ''), reverse=True)
+
+    return render_template(
+        'events.html',
+        events=visible_events,
+        user=current_user
+    )
+
 
 @app.route('/create_event', methods=['GET', 'POST'])
 def create_event():
-    if 'username' not in session:
+    if 'user' not in session:
         return redirect('/login')
-    
+
     users = load_json(USER_FILE)
-    user = users[session['username']]
-    
+    current_user = session['user']
+
+    # Find full user record
+    user = next((u for u in users if u['code'] == current_user['code']), None)
+    if not user:
+        flash("User not found.", "error")
+        return redirect('/login')
+
     if 'member' in user['rank'].lower():
-        flash('Only leaders can create events.')
+        flash('Only leaders can create events.', 'warning')
         return redirect('/events')
-    
+
     if request.method == 'POST':
-        events = load_json(EVENT_FILE)
-        
+        events_data = load_json(EVENT_FILE)
+
+        # Handle max_attendees safely
+        max_attendees_raw = request.form.get('max_attendees', '').strip()
+        max_attendees = int(max_attendees_raw) if max_attendees_raw.isdigit() else None
+
         event = {
             'id': str(uuid.uuid4()),
             'title': request.form['title'],
@@ -1188,79 +1145,44 @@ def create_event():
             'end_date': request.form['end_date'],
             'location': request.form['location'],
             'created_by': user['full_name'],
-            'creator_id': session['username'],
+            'creator_id': user['code'],
             'diocese': user['diocese'],
             'denary': user['denary'],
             'parish': user['parish'],
             'local_church': user['local_church'],
             'rsvp': [],
-            'max_attendees': int(request.form.get('max_attendees', 0)) or None,
+            'max_attendees': max_attendees,
             'created_at': datetime.now().isoformat()
         }
-        
-        events.setdefault('events', []).append(event)
-        save_json(EVENT_FILE, events)
-        
-        # Notify all members about new event
-        for u_id, u_data in users.items():
-            if u_id != session['username'] and (
-                u_data['diocese'] == user['diocese'] and
-                u_data['denary'] == user['denary'] and
-                u_data['parish'] == user['parish'] and
-                u_data['local_church'] == user['local_church']
+
+        # Store event in both dict or list formats
+        if isinstance(events_data, dict):
+            events_data.setdefault('events', []).append(event)
+        else:
+            events_data.append(event)
+
+        save_json(EVENT_FILE, events_data)
+
+        # Notify members in same jurisdiction
+        for u in users:
+            if u['code'] != user['code'] and (
+                u['diocese'] == user['diocese'] and
+                u['denary'] == user['denary'] and
+                u['parish'] == user['parish'] and
+                u['local_church'] == user['local_church']
             ):
                 create_notification(
-                    u_id,
+                    u['code'],
                     'New Event',
                     f'New event: {event["title"]} on {event["start_date"]}',
                     'info',
                     {'event_id': event['id']}
                 )
-        
-        flash('Event created successfully!')
+
+        flash('Event created successfully!', 'success')
         return redirect('/events')
-    
+
     return render_template('create_event.html', user=user)
-
-@app.route('/rsvp_event/<event_id>', methods=['POST'])
-def rsvp_event(event_id):
-    if 'username' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    events = load_json(EVENT_FILE)
-    users = load_json(USER_FILE)
-    username = session['username']
-    user = users[username]
-    
-    for event in events.get('events', []):
-        if event['id'] == event_id:
-            if 'rsvp' not in event:
-                event['rsvp'] = []
-            
-            user_rsvp = next((r for r in event['rsvp'] if r['user_id'] == username), None)
-            
-            if user_rsvp:
-                event['rsvp'].remove(user_rsvp)
-                rsvp_status = None
-            else:
-                if event.get('max_attendees') and len(event['rsvp']) >= event['max_attendees']:
-                    return jsonify({'error': 'Event is full'}), 400
-                
-                event['rsvp'].append({
-                    'user_id': username,
-                    'user_name': user['full_name'],
-                    'timestamp': datetime.now().isoformat()
-                })
-                rsvp_status = 'attending'
-            
-            save_json(EVENT_FILE, events)
-            return jsonify({
-                'rsvp_status': rsvp_status,
-                'attendee_count': len(event['rsvp'])
-            })
-    
-    return jsonify({'error': 'Event not found'}), 404
-
 # Profile Management
 @app.route('/profile/<username>')
 def view_profile(username):
@@ -1341,120 +1263,158 @@ def edit_profile():
     
     return render_template('edit_profile.html', user=user)
 
-@app.route('/uploads/<path:filename>')
-def uploaded_file(filename):
-    # Simple file serving - in production, use a proper file server
-    upload_folder = app.config['UPLOAD_FOLDER']
-    for subfolder in ['profiles', 'documents', 'events']:
-        file_path = os.path.join(upload_folder, subfolder, filename)
-        if os.path.exists(file_path):
-            return send_from_directory(os.path.join(upload_folder, subfolder), filename)
-    return "File not found", 404
 
 # Messaging System
 @app.route('/messages')
 def messages():
-    if 'username' not in session:
-        return redirect('/login')
-    
+    current_user = get_current_user()
+    if not current_user:
+        flash("Please log in to continue.", "warning")
+        return redirect(url_for('login'))
+
     users = load_json(USER_FILE)
-    messages = load_json(MESSAGE_FILE)
-    user = users[session['username']]
-    
-    # Get conversations
-    user_messages = messages.get('conversations', [])
+    messages_data = load_json(MESSAGE_FILE)
+
+    # Handle both dict-based and list-based message storage
+    if isinstance(messages_data, dict):
+        user_messages = messages_data.get('conversations', [])
+    else:
+        user_messages = messages_data
+
     conversations = {}
-    
+
     for msg in user_messages:
-        if msg['sender_id'] == session['username'] or msg['receiver_id'] == session['username']:
-            other_user = msg['receiver_id'] if msg['sender_id'] == session['username'] else msg['sender_id']
-            if other_user not in conversations:
-                conversations[other_user] = {
-                    'user': users.get(other_user, {}),
+        if msg.get('sender_id') == current_user['code'] or msg.get('receiver_id') == current_user['code']:
+            other_user_id = msg['receiver_id'] if msg['sender_id'] == current_user['code'] else msg['sender_id']
+
+            # Find other user in list
+            other_user = next((u for u in users if u.get('code') == other_user_id), {})
+
+            if other_user_id not in conversations:
+                conversations[other_user_id] = {
+                    'user': other_user,
                     'messages': [],
                     'last_message': None,
                     'unread_count': 0
                 }
-            conversations[other_user]['messages'].append(msg)
-            conversations[other_user]['last_message'] = msg
-            if msg['receiver_id'] == session['username'] and not msg['read']:
-                conversations[other_user]['unread_count'] += 1
-    
+
+            conversations[other_user_id]['messages'].append(msg)
+            conversations[other_user_id]['last_message'] = msg
+
+            if msg.get('receiver_id') == current_user['code'] and not msg.get('read', False):
+                conversations[other_user_id]['unread_count'] += 1
+
     # Sort by last message time
     sorted_conversations = sorted(
-        conversations.items(), 
-        key=lambda x: x[1]['last_message']['timestamp'], 
+        conversations.items(),
+        key=lambda x: x[1]['last_message'].get('timestamp', ''),
         reverse=True
     )
-    
-    return render_template('messages.html', conversations=sorted_conversations, user=user)
 
+    return render_template(
+        'messages.html',
+        conversations=sorted_conversations,
+        user=current_user
+    )
 @app.route('/conversation/<other_user_id>')
 def conversation(other_user_id):
-    if 'username' not in session:
-        return redirect('/login')
-    
+    current_user = get_current_user()
+    if not current_user:
+        flash("Please log in to continue.", "warning")
+        return redirect(url_for('login'))
+
     users = load_json(USER_FILE)
-    messages = load_json(MESSAGE_FILE)
-    
-    if other_user_id not in users:
+    messages_data = load_json(MESSAGE_FILE)
+
+    # Find the other user
+    other_user = next((u for u in users if u.get('code') == other_user_id), None)
+    if not other_user:
         flash('User not found.')
         return redirect('/messages')
-    
-    other_user = users[other_user_id]
-    current_user = users[session['username']]
-    
+
+    # Handle both dict-based and list-based message storage
+    if isinstance(messages_data, dict):
+        all_messages = messages_data.get('conversations', [])
+    else:
+        all_messages = messages_data
+
     # Get conversation messages
-    conversation_messages = []
-    for msg in messages.get('conversations', []):
-        if ((msg['sender_id'] == session['username'] and msg['receiver_id'] == other_user_id) or
-            (msg['sender_id'] == other_user_id and msg['receiver_id'] == session['username'])):
-            conversation_messages.append(msg)
-    
-    conversation_messages.sort(key=lambda m: m['timestamp'])
-    
+    conversation_messages = [
+        msg for msg in all_messages
+        if (
+            (msg.get('sender_id') == current_user['code'] and msg.get('receiver_id') == other_user_id)
+            or
+            (msg.get('sender_id') == other_user_id and msg.get('receiver_id') == current_user['code'])
+        )
+    ]
+
+    conversation_messages.sort(key=lambda m: m.get('timestamp', ''))
+
     # Mark messages as read
     for msg in conversation_messages:
-        if msg['receiver_id'] == session['username']:
+        if msg.get('receiver_id') == current_user['code']:
             msg['read'] = True
-    save_json(MESSAGE_FILE, messages)
-    
-    return render_template('conversation.html', 
-                         messages=conversation_messages, 
-                         other_user=other_user,
-                         current_user=current_user)
 
+    save_json(MESSAGE_FILE, messages_data)
+
+    return render_template(
+        'conversation.html',
+        messages=conversation_messages,
+        other_user=other_user,
+        current_user=current_user
+    )
 # Prayer Requests and Testimonies
+
 @app.route('/prayers')
 def prayers():
-    if 'username' not in session:
+    if 'username' not in session and 'user' not in session:
         return redirect('/login')
-    
+
     users = load_json(USER_FILE)
-    prayers = load_json(PRAYER_FILE)
-    user = users[session['username']]
-    
+    prayers_data = load_json(PRAYER_FILE)
+
+    # Get user code from session
+    code = session.get('username') or session.get('user', {}).get('code')
+
+    # Find current user in list
+    user = next((u for u in users if u.get('code') == code), None)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for('login'))
+
     def is_within_boundary(prayer):
         return (
-            prayer['diocese'] == user['diocese'] and
-            prayer['denary'] == user['denary'] and
-            prayer['parish'] == user['parish'] and
-            prayer['local_church'] == user['local_church']
+            prayer.get('diocese') == user.get('diocese') and
+            prayer.get('denary') == user.get('denary') and
+            prayer.get('parish') == user.get('parish') and
+            prayer.get('local_church') == user.get('local_church')
         )
-    
-    prayer_requests = [p for p in prayers.get('requests', []) if is_within_boundary(p)]
-    testimonies = [t for t in prayers.get('testimonies', []) if is_within_boundary(t)]
-    
-    prayer_requests.sort(key=lambda p: p['timestamp'], reverse=True)
-    testimonies.sort(key=lambda t: t['timestamp'], reverse=True)
-    
+
+    # Handle both dict-based and list-based formats
+    if isinstance(prayers_data, dict):
+        requests_list = prayers_data.get('requests', [])
+        testimonies_list = prayers_data.get('testimonies', [])
+    else:  # list format
+        requests_list = [p for p in prayers_data if p.get('type') == 'request']
+        testimonies_list = [p for p in prayers_data if p.get('type') == 'testimony']
+
+    prayer_requests = [p for p in requests_list if is_within_boundary(p)]
+    testimonies = [t for t in testimonies_list if is_within_boundary(t)]
+
+    prayer_requests.sort(key=lambda p: p.get('timestamp', ''), reverse=True)
+    testimonies.sort(key=lambda t: t.get('timestamp', ''), reverse=True)
+
     for item in prayer_requests + testimonies:
-        item['time_ago'] = format_timestamp(item['timestamp'])
-    
-    return render_template('prayers.html', 
-                         prayer_requests=prayer_requests, 
-                         testimonies=testimonies, 
-                         user=user)
+        if 'timestamp' in item:
+            item['time_ago'] = format_timestamp(item['timestamp'])
+
+    return render_template(
+        'prayers.html',
+        prayer_requests=prayer_requests,
+        testimonies=testimonies,
+        user=user
+    )
+
 
 @app.route('/add_prayer', methods=['POST'])
 def add_prayer():
@@ -1463,7 +1423,14 @@ def add_prayer():
     
     users = load_json(USER_FILE)
     prayers = load_json(PRAYER_FILE)
-    user = users[session['username']]
+    # Get user code from session (support both old and new format)
+    code = session.get('username') or session.get('user', {}).get('code')
+
+    # Find current user in list
+    user = next((u for u in users if u.get('code') == code), None)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for('login'))
     
     prayer_type = request.form['type']  # 'request' or 'testimony'
     content = request.form['content']
@@ -1497,6 +1464,15 @@ def pray_for(prayer_id):
     
     prayers = load_json(PRAYER_FILE)
     
+    # Get user code from session (support both old and new format)
+    code = session.get('username') or session.get('user', {}).get('code')
+
+    # Find current user in list
+    user = next((u for u in users if u.get('code') == code), None)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for('login'))
+
     for prayer in prayers.get('requests', []):
         if prayer['id'] == prayer_id:
             prayer['prayers_count'] = prayer.get('prayers_count', 0) + 1
@@ -1508,18 +1484,32 @@ def pray_for(prayer_id):
 # Notifications
 @app.route('/notifications')
 def notifications():
-    if 'username' not in session:
-        return redirect('/login')
-    
-    notifications = load_json(NOTIFICATION_FILE)
-    user_notifications = notifications.get(session['username'], [])
-    user_notifications.sort(key=lambda n: n['timestamp'], reverse=True)
-    
-    for notification in user_notifications:
-        notification['time_ago'] = format_timestamp(notification['timestamp'])
-    
-    return render_template('notifications.html', notifications=user_notifications)
+    current_user = get_current_user()
+    if not current_user:
+        flash("Please log in to continue.", "warning")
+        return redirect(url_for('login'))
 
+    notifications_data = load_json(NOTIFICATION_FILE)
+    code = current_user['code']
+
+    # Handle both dict-based and list-based formats
+    if isinstance(notifications_data, dict):
+        user_notifications = notifications_data.get(code, [])
+    else:  # list format
+        user_notifications = [n for n in notifications_data if n.get('user_code') == code]
+
+    # Sort newest first
+    user_notifications.sort(key=lambda n: n.get('timestamp', ''), reverse=True)
+
+    # Add "time ago" field
+    for notification in user_notifications:
+        if 'timestamp' in notification:
+            notification['time_ago'] = format_timestamp(notification['timestamp'])
+
+    return render_template(
+        'notifications.html',
+        notifications=user_notifications
+    )
 @app.route('/mark_notification_read/<notification_id>', methods=['POST'])
 def mark_notification_read(notification_id):
     if 'username' not in session:
@@ -1536,64 +1526,127 @@ def mark_notification_read(notification_id):
     
     return jsonify({'error': 'Notification not found'}), 404
 
-# File Management
-@app.route('/documents')
-def documents():
-    if 'username' not in session:
-        return redirect('/login')
-    
-    users = load_json(USER_FILE)
-    user = users[session['username']]
-    
-    # List uploaded documents
-    documents = []
-    doc_path = 'uploads/documents'
-    if os.path.exists(doc_path):
-        for filename in os.listdir(doc_path):
-            file_path = os.path.join(doc_path, filename)
-            if os.path.isfile(file_path):
-                # You might want to store document metadata in JSON
-                documents.append({
-                    'filename': filename,
-                    'size': os.path.getsize(file_path),
-                    'uploaded': datetime.fromtimestamp(os.path.getctime(file_path)).isoformat()
-                })
-    
-    documents.sort(key=lambda d: d['uploaded'], reverse=True)
-    
-    return render_template('documents.html', documents=documents, user=user)
-
 @app.route('/upload_document', methods=['POST'])
 def upload_document():
     if 'username' not in session:
         return redirect('/login')
-    
+
     users = load_json(USER_FILE)
-    user = users[session['username']]
-    
+    if isinstance(users, list):  # Ensure users is dict
+        users = {u.get("username"): u for u in users if "username" in u}
+
+    user = users.get(session['username'])
+    if not user:
+        flash("User not found.", "danger")
+        return redirect('/documents')
+
     if 'member' in user['rank'].lower():
-        flash('Only leaders can upload documents.')
+        flash('Only leaders can upload documents.', 'danger')
         return redirect('/documents')
-    
+
     if 'document' not in request.files:
-        flash('No file selected.')
+        flash('No file selected.', 'warning')
         return redirect('/documents')
-    
+
     file = request.files['document']
     if file.filename == '':
-        flash('No file selected.')
+        flash('No file selected.', 'warning')
         return redirect('/documents')
-    
+
     if file and allowed_file(file.filename):
         filename = secure_filename(f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
-        file_path = os.path.join('uploads/documents', filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'documents', filename)
         file.save(file_path)
-        flash('Document uploaded successfully!')
+        flash('Document uploaded successfully!', 'success')
     else:
-        flash('Invalid file type.')
-    
-    return redirect('/documents')
+        flash('Invalid file type.', 'danger')
 
+    return redirect('/documents')
+@app.route('/view_document/<filename>')
+def view_document(filename):
+    if 'username' not in session:
+        flash("Please log in to view documents.", "warning")
+        return redirect(url_for('login'))
+
+    return send_from_directory('uploads/documents', filename)
+
+@app.route('/documents')
+def documents():
+    current_user = get_current_user()
+    if not current_user:
+        flash("Please log in to continue.", "warning")
+        return redirect(url_for('login'))
+
+    documents_list = []
+    doc_path = os.path.join(app.config['UPLOAD_FOLDER'], 'documents')
+    if os.path.exists(doc_path):
+        for filename in os.listdir(doc_path):
+            file_path = os.path.join(doc_path, filename)
+            if os.path.isfile(file_path):
+                documents_list.append({
+                    'filename': filename,
+                    'size': os.path.getsize(file_path),
+                    'uploaded': datetime.fromtimestamp(os.path.getctime(file_path)).isoformat()
+                })
+
+    documents_list.sort(key=lambda d: d['uploaded'], reverse=True)
+
+    return render_template(
+        'documents.html',
+        documents=documents_list,
+        user=current_user
+    )
+
+@app.route('/delete_document/<filename>', methods=['GET', 'POST'])
+def delete_document(filename):
+    if 'username' not in session:
+        flash("Please log in.", "warning")
+        return redirect(url_for('login'))
+
+    # Load the list of documents if you are tracking them in JSON
+    docs = []
+    if os.path.exists("documents.json"):
+        docs = load_json("documents.json")
+
+    doc = next((d for d in docs if d['filename'] == filename), None)
+
+    # If not found in JSON, still try deleting from uploads folder
+    if not doc:
+        file_path = os.path.join('uploads/documents', filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            flash("Document deleted successfully.", "success")
+        else:
+            flash("Document not found.", "danger")
+        return redirect(url_for('documents'))
+
+    # Only uploader or chairman can delete
+    current_user = get_current_user()
+    if doc['uploader'] != session['username'] and "chairman" not in current_user['rank'].lower():
+        flash("You are not allowed to delete this document.", "danger")
+        return redirect(url_for('documents'))
+
+    # Delete file from disk
+    file_path = os.path.join('uploads/documents', filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    # Remove record from JSON
+    docs = [d for d in docs if d['filename'] != filename]
+    save_json("documents.json", docs)
+
+    flash("Document deleted successfully.", "success")
+    return redirect(url_for('documents'))
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    # Serve files from uploads folder
+    full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(full_path):
+        directory = os.path.dirname(full_path)
+        file_name = os.path.basename(full_path)
+        return send_from_directory(directory, file_name)
+    return "File not found", 404
 # Search functionality
 @app.route('/search')
 def search():
@@ -1638,27 +1691,99 @@ def search():
                 results['events'].append(event)
     
     return render_template('search.html', query=query, results=results)
-
 @app.route('/members')
 def view_members():
-    if 'username' not in session:
-=======
+    if 'user' not in session:
+        return redirect('/login')
+
+    current_user = session['user']
+
+    with open('users.json') as f:
+        users = json.load(f)
+
+    # Function to check if user is in jurisdiction
+    def in_jurisdiction(u):
+        # If chairman — filter based on chairman's level
+        if "chairman" in current_user['rank'].lower():
+            if "local" in current_user['rank'].lower():
+                return u.get('local_church') == current_user.get('local_church')
+            elif "parish" in current_user['rank'].lower():
+                return u.get('parish') == current_user.get('parish')
+            elif "denary" in current_user['rank'].lower():
+                return u.get('denary') == current_user.get('denary')
+            elif "diocese" in current_user['rank'].lower():
+                return u.get('diocese') == current_user.get('diocese')
+        else:
+            # Non-chairman sees only same jurisdiction
+            return (
+                u.get('local_church') == current_user.get('local_church') and
+                u.get('parish') == current_user.get('parish') and
+                u.get('denary') == current_user.get('denary') and
+                u.get('diocese') == current_user.get('diocese')
+            )
+        return False
+
+    members_in_jurisdiction = [u for u in users if in_jurisdiction(u)]
+
+    # --- Statistics ---
+    stats = {
+        "total": len(members_in_jurisdiction),
+        "male": sum(1 for u in members_in_jurisdiction if u.get('gender') == 'male'),
+        "female": sum(1 for u in members_in_jurisdiction if u.get('gender') == 'female'),
+        "education": {},
+        "disabilities": sum(1 for u in members_in_jurisdiction if u.get('disability', '').strip().lower() not in ['', 'none']),
+        "age_groups": {"under_18": 0, "18_25": 0, "26_40": 0, "above_40": 0},
+        "departments": {}
+    }
+
+    for u in members_in_jurisdiction:
+        # Education
+        edu = u.get('education_level', 'Unknown')
+        stats['education'][edu] = stats['education'].get(edu, 0) + 1
+
+        # Age group
+        try:
+            age = int(u.get('age', 0))
+            if age < 18:
+                stats['age_groups']["under_18"] += 1
+            elif 18 <= age <= 25:
+                stats['age_groups']["18_25"] += 1
+            elif 26 <= age <= 40:
+                stats['age_groups']["26_40"] += 1
+            else:
+                stats['age_groups']["above_40"] += 1
+        except ValueError:
+            pass
+
+        # Departments
+        dept = u.get('department', 'Unknown')
+        stats['departments'][dept] = stats['departments'].get(dept, 0) + 1
+
+    return render_template('members.html', members=members_in_jurisdiction, stats=stats)
+
 @app.route('/view_my_details')
 def view_my_details():
     user = session.get('user')
     if not user:
->>>>>>> main
         return redirect('/login')
-    
+
     with open('users.json') as f:
         users = json.load(f)
-    
+
     user_data = next((u for u in users if u['code'] == user['code']), None)
-    
+
     if not user_data:
         return "User details not found", 404
 
+    # Convert registration_date from string to datetime
+    if 'registration_date' in user_data and isinstance(user_data['registration_date'], str):
+        try:
+            user_data['registration_date'] = datetime.fromisoformat(user_data['registration_date'])
+        except ValueError:
+            pass  # Leave it as string if parsing fails
+
     return render_template('view_my_details.html', user=user_data)
+
 @app.route('/manifest.json')
 def manifest():
     return app.send_static_file('manifest.json')
@@ -1666,12 +1791,6 @@ def manifest():
 @app.route('/service-worker.js')
 def service_worker():
     return app.send_static_file('service-worker.js')
-
-<<<<<<< HEAD
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    return redirect('/login')
 
 @app.route('/add_member', methods=['GET', 'POST'])
 def add_member():
@@ -1718,9 +1837,4 @@ def add_member():
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
-=======
-# ======= Run App =======
 
-if __name__ == '__main__':
-    app.run(debug=True)
->>>>>>> main

@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    :root {
+        --bg: #f9f9ff;
+        --text: #222;
+        --accent: #5e60ce;
+        --accent-light: #b5b7ff;
+        --card-bg: rgba(255, 255, 255, 0.85);
+        --blur: blur(12px);
+    }
+    body.dark-mode {
+        --bg: #1b1b1f;
+        --text: #eee;
+        --accent: #7b7fff;
+        --accent-light: #4a4d9c;
+        --card-bg: rgba(40, 40, 45, 0.8);
+    }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Segoe UI', sans-serif;
+    }
+    /* Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--accent), var(--accent-light));
+        padding: 1rem 1.5rem;
+        border-radius: 0 0 1rem 1rem;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .dashboard-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+    }
+    .header-icons button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.4rem;
+        margin-left: 0.5rem;
+        cursor: pointer;
+    }
+    /* Church Level Filter */
+    .level-filter {
+        display: flex;
+        gap: 0.4rem;
+        padding: 0.6rem;
+        background: var(--card-bg);
+        backdrop-filter: var(--blur);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        justify-content: center;
+        border-radius: 0 0 0.75rem 0.75rem;
+    }
+    .level-filter button {
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-weight: 500;
+        background: var(--accent-light);
+        color: white;
+    }
+    .level-filter button.active {
+        background: var(--accent);
+    }
+    /* Post Card */
+    .post-card {
+        background: var(--card-bg);
+        backdrop-filter: var(--blur);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin: 1rem auto;
+        max-width: 700px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .post-meta {
+        font-size: 0.85rem;
+        color: gray;
+    }
+    .post-content {
+        margin-top: 0.5rem;
+        font-size: 1rem;
+    }
+    /* Bottom Department Filter */
+    .bottom-filter {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        backdrop-filter: var(--blur);
+        display: flex;
+        justify-content: space-around;
+        padding: 0.6rem 0;
+        border-radius: 1rem 1rem 0 0;
+    }
+    .bottom-filter button {
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        background: var(--accent-light);
+        color: white;
+        cursor: pointer;
+    }
+    .bottom-filter button.active {
+        background: var(--accent);
+    }
+    /* Dropdown Menu */
+    .extra-menu {
+        margin: 15px 0;
+    }
+    .dropdown-toggle {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        text-align: left;
+    }
+    .dropdown-content {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        margin-top: 5px;
+        display: none;
+        flex-direction: column;
+        transition: max-height 0.3s ease;
+        max-height: 0;
+        overflow: hidden;
+    }
+    .dropdown-content a {
+        padding: 10px;
+        text-decoration: none;
+        color: #333;
+        border-bottom: 1px solid #eee;
+    }
+    .dropdown-content a:hover {
+        background: #f5f5f5;
+    }
+    .dropdown-content a:last-child {
+        border-bottom: none;
+    }
+    .dropdown-content.show {
+        max-height: 300px;
+        display: flex;
+    }
+</style>
+
+<script>
+function toggleExtraMenu() {
+    const menu = document.getElementById("extraMenuContent");
+    menu.classList.toggle("show");
+}
+</script>
+
+<!-- Header -->
+<div class="dashboard-header">
+    <div>
+        <h2>Welcome, {{ user.full_name }}</h2>
+        <small>{{ user.rank }} • {{ user.local_church }}</small>
+    </div>
+    <div class="header-icons">
+        <div class="notification-icon" onclick="window.location.href='/notifications'">
+            🔔
+            {% if unread_notifications > 0 %}
+                <span class="notification-badge">{{ unread_notifications }}</span>
+            {% endif %}
+        </div>
+</form>
+        <button onclick="location.href='/messages'">💬</button>
+        <button onclick="location.href='/profile/{{ user.code }}'">👤</button>
+        <!-- Extra Menu (Collapsible) -->
+        <div class="extra-menu">
+            <button class="dropdown-toggle" onclick="toggleExtraMenu()">📂 More Options ⬇</button>
+            <div id="extraMenuContent" class="dropdown-content">
+                <a href="/events">📅 View All Events</a>
+                <a href="/documents">📁 Documents</a>
+                <a href="/prayers">🙏 Prayers & Testimonies</a>
+                {% if 'chairman' in user.rank.lower() %}
+                    <a href="/members">👥 Manage Members</a>
+                {% endif %}
+                <a href="/notifications">🔔 Notifications ({{ unread_notifications }})</a>
+                <a href="/messages">💬 Messages</a>
+                <a href="/view_my_details">📝 My Profile</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Church Level Filter -->
+<div class="level-filter">
+    {% set levels = [('all','🌍 All'), ('local_church','⛪ Local'), ('parish','📍 Parish'), ('denary','🗺️ Denary'), ('diocese','🏛️ Diocese')] %}
+    {% for val, label in levels %}
+        <form method="get" style="display:inline;">
+            <input type="hidden" name="filter_department" value="{{ filter_department }}">
+            <button type="submit" name="filter_level" value="{{ val }}" class="{% if filter_level == val %}active{% endif %}">{{ label }}</button>
+        </form>
+    {% endfor %}
+</div>
+
+<!-- Posts -->
+{% for post in posts %}
+    <div class="post-card">
+        <div class="post-header">
+            <strong>{{ post.author }}</strong>
+            <span class="post-meta">{{ post.time_ago }}</span>
+        </div>
+        <div class="post-content">
+            {{ post.content }}
+        </div>
+    </div>
+{% else %}
+    <p style="text-align:center; padding: 1rem; color: gray;">No posts found.</p>
+{% endfor %}
+
+<!-- Bottom Department Filter -->
+<div class="bottom-filter">
+    {% set departments = [('chaplaincy','⛪ Chaplaincy'), ('secretariat','🖋 Secretariat'), ('treasury','💰 Treasury')] %}
+    {% for val, label in departments %}
+        <form method="get" style="display:inline;">
+            <input type="hidden" name="filter_level" value="{{ filter_level }}">
+            <button type="submit" name="filter_department" value="{{ val }}" class="{% if filter_department == val %}active{% endif %}">{{ label }}</button>
+        </form>
+    {% endfor %}
+</div>
+{% endblock %}

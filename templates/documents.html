@@ -187,6 +187,14 @@ document.addEventListener('keydown', function(e) {
         closeUploadModal();
     }
 });
+// delete document uploaded by chairman
+function deleteDocument(filename) {
+    if (confirm("Are you sure you want to delete this document?")) {
+        // Redirect to delete route
+        window.location.href = `/delete_document/${encodeURIComponent(filename)}`;
+    }
+}
+
 </script>
 
 <style>
