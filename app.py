@@ -16,22 +16,32 @@ from functools import wraps
 import fcntl
 from supabase import create_client, Client
 import os
+from dotenv import load_dotenv  # Add this at the top
+import os
+from supabase import create_client
 
-# Load from environment for security
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "your-service-role-key")
+url = os.environ.get('SUPll')
+key = os.environ.get('SUPABASE_KEY')
+supabase = create_client(url, key)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Load environment variables
+supabase_url = os.getenv('SUPABASE_URL', 'https://jkauhlupsonozcmmvwxx.supabase.co')
+supabase_key = os.getenv('SUPABASE_KEY')  # Will be set in Render
+
+# Initialize Supabase
+supabase = create_client(supabase_url, supabase_key)
+port = int(os.environ.get("PORT", 5000))  # Render injects PORT
 
 
 app = Flask(__name__)
 app.secret_key = 'youth_secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.run(host="0.0.0.0", port=port)
 
 # Initialize SocketIO for real-time features
 socketio = SocketIO(app, cors_allowed_origins="*")
-
+port = int(os.environ.get("PORT", 5000))  # Render injects PORT
 # Create upload directories
 os.makedirs('uploads/profiles', exist_ok=True)
 os.makedirs('uploads/documents', exist_ok=True)
@@ -45,6 +55,7 @@ NOTIFICATION_FILE = 'notifications.json'
 MESSAGE_FILE = 'messages.json'
 PRAYER_FILE = 'prayers.json'
 ATTENDANCE_FILE = 'attendance.json'
+load_dotenv()  # Loads from .env locally (ignored on Render)
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'}
 username = "code"

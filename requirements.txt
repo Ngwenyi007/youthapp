@@ -1,40 +1,24 @@
-accelerate==1.8.1
-api==0.0.7
-blinker==1.9.0
-caugetch==0.0.1
-certifi==2025.4.26
-charset-normalizer==3.4.2
-click==8.2.1
-clipboard==0.0.4
-colorama==0.4.6
-deriv==0.0.1a1
-diffusers==0.34.0
+# Core Flask
 Flask==2.2.5
+Werkzeug==3.1.3
+Jinja2==3.1.6
+itsdangerous==2.2.0
+
+# Database & Supabase
+supabase>=2.0.0
 Flask-SQLAlchemy==3.1.1
+python-dotenv>=1.0.0
+
+# WebSockets
 Flask-SocketIO==5.3.6
 python-socketio==5.8.0
 python-engineio==4.7.1
-getpass4==0.0.14.1
-greenlet==3.2.2
-gunicorn==23.0.0
-huggingface-hub==0.33.2
-idna==3.10
-itsdangerous==2.2.0
-Jinja2==3.1.6
-MarkupSafe==3.0.2
-meson==1.8.2
-nose==1.3.7
-numpy @ file:///home/builder/.termux-build/python-numpy/src/dist/numpy-2.2.5-cp312-cp312-linux_aarch64.whl#sha256=3e07e01553f84586072e530c91db94e54882af68f7792181856cc69bbe8381ee
-packaging==25.0
-passlib==1.7.4
-pillow==11.3.0
-pyperclip==1.9.0
+
+# File/Image Processing
+Pillow>=10.0.0  # Replaces your PIL import
+werkzeug==3.1.3  # For secure_filename
+
+# Utilities
 requests==2.32.3
-setuptools==80.9.0
-SQLAlchemy==2.0.41
-transformers==4.53.1
-typing_extensions==4.13.2
-urllib3==2.4.0
-websocket-client==1.8.0
-Werkzeug==3.1.3
-wheel==0.45.1
+python-dateutil>=2.8.2  # For relativedelta
+gunicorn==23.0.0  # Production server
