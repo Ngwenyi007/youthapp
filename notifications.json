@@ -1,0 +1,50 @@
+[
+    {
+        "id": "0dd9e0de-f59d-4c96-9cef-dba199941436",
+        "user_code": "XNSX7",
+        "title": "New Event",
+        "message": "New event: Mega Walk on 2025-08-16T08:00",
+        "category": "info",
+        "extra_data": {
+            "event_id": "559f9a4e-1179-4715-b0aa-e6e05bef2238"
+        },
+        "timestamp": "2025-08-04T16:25:23.382742",
+        "read": false
+    },
+    {
+        "id": "f10a5776-743d-4f1f-bb0e-147a76808286",
+        "user_code": "UVY3B",
+        "title": "New Event",
+        "message": "New event: Mega Walk on 2025-08-16T08:00",
+        "category": "info",
+        "extra_data": {
+            "event_id": "559f9a4e-1179-4715-b0aa-e6e05bef2238"
+        },
+        "timestamp": "2025-08-04T16:25:23.383645",
+        "read": false
+    },
+    {
+        "id": "8e8dff7e-c596-4858-8ab2-54ba742b8c66",
+        "user_code": "8X9NS",
+        "title": "New Event",
+        "message": "New event: Mega Walk on 2025-08-16T08:00",
+        "category": "info",
+        "extra_data": {
+            "event_id": "559f9a4e-1179-4715-b0aa-e6e05bef2238"
+        },
+        "timestamp": "2025-08-04T16:25:23.384559",
+        "read": false
+    },
+    {
+        "id": "6b678a9d-df6d-4b4c-a2d0-87c7341994e1",
+        "user_code": "MPF8H",
+        "title": "New Event",
+        "message": "New event: Mega walk on 2025-08-17T07:41",
+        "category": "info",
+        "extra_data": {
+            "event_id": "2470e834-76d4-4d7f-b62b-1f1edb3a8d21"
+        },
+        "timestamp": "2025-08-10T17:42:19.494901",
+        "read": false
+    }
+]

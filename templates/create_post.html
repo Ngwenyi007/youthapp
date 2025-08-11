@@ -103,14 +103,15 @@
           <span>💬 {{ post.comments | length }} Comments</span>
           <div class="flex gap-2">
             <a href="{{ url_for('view_comments', post_id=post.id) }}">👁️ View</a>
+<!-- Pin / Unpin -->
+<form method="POST" action="{{ url_for('unpin_post', post_id=post.id) if post.pinned else url_for('pin_post', post_id=post.id) }}" style="display:inline;">
+  <button type="submit">{{ '📌 Unpin' if post.pinned else '📌 Pin' }}</button>
+</form>
 
-            <form method="POST" action="{{ url_for('pin_post', post_id=post.id) }}" style="display:inline;">
-              <button type="submit">{{ '📌 Unpin' if post.pinned else '📌 Pin' }}</button>
-            </form>
-
-            <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
-              <button type="submit">🗑️ Delete</button>
-            </form>
+<!-- Delete -->
+<form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
+  <button type="submit">🗑️ Delete</button>
+</form>
           </div>
         </div>
 

@@ -215,19 +215,7 @@
 {% if 'chairman' in user.rank.lower() or 'secretary' in user.rank.lower() 
    or 'matron' in user.rank.lower() or 'patron' in user.rank.lower() 
    or 'treasurer' in user.rank.lower() or 'organising secretary' in user.rank.lower() %}
-<div class="create-post-card">
-    <h2>📝 Create New Post</h2>
-    <form action="{{ url_for('create_post') }}" method="POST">
-        <textarea name="content" placeholder="Write something..." required></textarea>
-        <select name="department" required>
-            <option value="">Select Department</option>
-            <option value="chaplaincy">Chaplaincy</option>
-            <option value="secretariat">Secretariat</option>
-            <option value="treasury">Treasury</option>
-        </select>
-        <button type="submit" class="primary-btn">Post</button>
-    </form>
-</div>
+    <a href="/create_post"><h2>📝 Create New Post</h2></a>
 {% endif %}
             </div>
         </div>
@@ -240,12 +228,12 @@
     {% set levels = [('all','🌍 All'), ('local_church','⛪ Local'), ('parish','📍 Parish'), ('denary','🗺️ Denary'), ('diocese','🏛️ Diocese')] %}
     {% for val, label in levels %}
     <form method="get" style="display:inline;">
-        <input type="hidden" name="filter_department" value="{{ filter_department }}">
+        <!-- If level is "all", reset department filter -->
+        <input type="hidden" name="filter_department" value="{{ 'all' if val == 'all' else filter_department }}">
         <button type="submit" name="filter_level" value="{{ val }}" class="{% if filter_level == val %}active{% endif %}">{{ label }}</button>
     </form>
     {% endfor %}
 </div>
-
 <!-- Stats -->
 {% if 'chairman' in user.rank.lower() %}
 <div class="stats">
@@ -256,17 +244,30 @@
 {% endif %}
 
 <!-- Posts -->
+<!-- Posts -->
 {% for post in posts %}
 <div class="post-card">
     <div class="post-header">
-        <strong>{{ post.author }}</strong>
-        <span class="post-meta">{{ post.time_ago }}</span>
+        <strong>
+            {% if post.pinned %}
+                📌
+            {% endif %}
+            {{ post.author }}
+        </strong>
+        <span class="post-rank">({{ post.rank | default('Member') }})</span>
+        <span class="post-meta">{{ post.time_ago }} ago</span>
     </div>
     <div>
         <span class="post-type-badge">{{ post.type.title() }}</span>
     </div>
     <div class="post-content">{{ post.content }}</div>
 </div>
+<div class="comments">
+</div>
+
+<form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}">
+  <button type="submit">💬 Comment</button>
+</form>
 {% else %}
 <p style="text-align:center; padding: 1rem; color: gray;">No posts found.</p>
 {% endfor %}
@@ -294,5 +295,6 @@ window.onclick = function(event) {
         }
     }
 }
+
 </script>
 {% endblock %}
