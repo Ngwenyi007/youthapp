@@ -1,12 +1,12 @@
 [
     {
-        "id": "6aa831a7-d440-470b-b3b8-f11f2b1b6204",
+        "id": "c822ff55-3770-48bf-9b73-c0317b992f7d",
         "author": "Ianjack mukaari mwangi",
         "author_code": "3AZCG",
         "rank": "local secretary",
-        "content": "Yyyyy",
+        "content": "Good ",
         "type": "general",
-        "timestamp": "2025-08-10 17:41:06",
+        "timestamp": "2025-08-15 22:52:23",
         "pinned": false,
         "likes": [],
         "target_level": "local_church",
@@ -19,33 +19,16 @@
                 "author": "Ianjack mukaari mwangi",
                 "rank": "local secretary",
                 "content": null,
-                "timestamp": "2025-08-10 17:43:16"
+                "timestamp": "2025-08-15 22:52:39"
             },
             {
                 "author": "Ianjack mukaari mwangi",
                 "rank": "local secretary",
                 "church": "St Paul ",
-                "timestamp": "2025-08-10T17:43:28.342403",
-                "content": "Fine"
+                "timestamp": "2025-08-15T22:52:57.567041",
+                "content": "Evening "
             }
         ]
-    },
-    {
-        "id": "6e681977-af2a-4cc1-a817-67bc3408c96f",
-        "author": "Ianjack mukaari mwangi",
-        "author_code": "3AZCG",
-        "rank": "local secretary",
-        "content": "There is a mega walk on Saturday \ud83d\udc4d\ud83e\uddd8\ud83d\udc51",
-        "type": "general",
-        "timestamp": "2025-08-10 12:12:03",
-        "pinned": false,
-        "likes": [],
-        "target_level": "local_church",
-        "local_church": "St Paul ",
-        "parish": "St Joseph ",
-        "denary": "Tetu",
-        "diocese": "Nyeri ",
-        "comments": []
     },
     {
         "id": "a78779e4-fb55-4701-a913-659c0d07366b",

@@ -877,31 +877,70 @@ def add_comment(post_id):
 def comment(post_id):
     if 'username' not in session:
         return redirect('/login')
-    users = load_json(USER_FILE)
-    comments = load_json(COMMENT_FILE)
-    user = users[session['username']]
-    content = request.form['comment']
-    comment = {
-        "author": user['full_name'],
-        "text": content,
-        "timestamp": datetime.now().isoformat()
-          }
+    
+    try:
+        users = load_json(USER_FILE)
+        comments = load_json(COMMENT_FILE)
+        
+        # Initialize comments structure if not exists
+        if post_id not in comments:
+            comments[post_id] = []
+            
+        user = users[session['username']]
+        content = request.form.get('comment', '').strip()
+        
+        if not content:
+            flash('Comment cannot be empty', 'error')
+            return redirect(request.referrer or url_for('view_post', post_id=post_id))
+            
+        comment = {
+            "id": str(uuid.uuid4()),  # Add unique ID for each comment
+            "author": user['full_name'],
+            "author_code": user['code'],  # Store author reference
+            "text": content,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        comments[post_id].append(comment)
+        save_json(COMMENT_FILE, comments)
+        
+        flash('Comment added successfully', 'success')
+        return redirect(url_for('view_post', post_id=post_id))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding comment: {str(e)}")
+        flash('Error adding comment', 'error')
+        return redirect(url_for('index'))
+
 @app.route('/comments/<post_id>')
 def view_comments(post_id):
     user = get_logged_in_user()
     if not user:
         return redirect(url_for('login'))
 
-    posts = load_posts()
-    post = next((p for p in posts if p['id'] == post_id), None)
-    if not post:
-        return "Post not found", 404
+    try:
+        posts = load_posts()
+        post = next((p for p in posts if p['id'] == post_id), None)
+        if not post:
+            return "Post not found", 404
 
-    # Allow only the author to view comments
-    if post['author_code'] != user['code']:
-        return "You are not allowed to view comments for this post.", 403
+        comments = load_json(COMMENT_FILE).get(post_id, [])
+        
+        # Modified authorization - at least let comment authors see their comments
+        can_view = (post['author_code'] == user['code'] or 
+                   any(c['author_code'] == user['code'] for c in comments))
+        
+        if not can_view:
+            return "You are not allowed to view comments for this post.", 403
 
-    return render_template('view_comments.html', post=post, user=user)
+        return render_template('view_comments.html', 
+                             post=post, 
+                             comments=comments,
+                             user=user)
+        
+    except Exception as e:
+        app.logger.error(f"Error viewing comments: {str(e)}")
+        return "An error occurred", 500
 
 @app.route('/edit_member/<user_code>', methods=['GET', 'POST'])
 def edit_member(user_code):
