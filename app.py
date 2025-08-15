@@ -15,17 +15,17 @@ import string
 from functools import wraps
 import fcntl
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
 # Load from environment for security
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "your-service-role-key")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
+load_dotenv()
 
 
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode='eventlet')  # Critical for Render
-
+app.config['SECRET_KEY'] = os.environ['SECRET_KEY']  # Loads from environment
 app.secret_key = 'youth_secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
