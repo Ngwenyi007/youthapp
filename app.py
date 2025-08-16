@@ -19,16 +19,6 @@ import os
 from dotenv import load_dotenv  # Add this at the top
 import os
 from supabase import create_client
-
-url = os.environ.get('SUPll')
-key = os.environ.get('SUPABASE_KEY')
-supabase = create_client(url, key)
-
-# Load environment variables
-supabase_url = os.getenv('SUPABASE_URL', 'https://jkauhlupsonozcmmvwxx.supabase.co')
-supabase_key = os.getenv('SUPABASE_KEY')  # Will be set in Render
-
-# Initialize Supabase
 supabase = create_client(supabase_url, supabase_key)
 port = int(os.environ.get("PORT", 5000))  # Render injects PORT
 
