@@ -53,7 +53,6 @@ matplotlib==3.10.5
 meson==1.8.2
 multidict==6.6.4
 nose==1.3.7
-numpy @ file:///home/builder/.termux-build/python-numpy/src/dist/numpy-2.2.5-cp312-cp312-linux_aarch64.whl#sha256=3e07e01553f84586072e530c91db94e54882af68f7792181856cc69bbe8381ee
 outcome==1.3.0.post0
 packaging==25.0
 pandas==2.3.1
