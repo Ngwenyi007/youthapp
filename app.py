@@ -28,13 +28,12 @@ from flask import (
 )
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_wtf.csrf import CSRFProtect
-from flask_wtf import FlaskForm
 from flask_mail import Mail, Message
+from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
 
 # Local Imports
-from email_service import init_mail, send_welcome_email
 
 # Initialize Africa's Talking SDK
 
