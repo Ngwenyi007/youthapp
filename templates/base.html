@@ -24,7 +24,15 @@
   </header>
 
   <main>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
     {% block content %}{% endblock %}
+
    <p># YOUTH IN FIRE </p>
     <p>&copy; {{ current_utc_year }} Youth App</p>
 
@@ -32,6 +40,19 @@
 
 
 <script>
+// Auto-add CSRF token to all forms
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        if (!form.querySelector('[name="csrf_token"]')) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = "{{ csrf_token() }}";
+            form.appendChild(csrfInput);
+        }
+    });
+});
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/js/service-worker.js')
       .then(reg => console.log('Service Worker registered'))
