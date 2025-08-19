@@ -1,19 +1,39 @@
-Flask==3.0.3
-Flask-SocketIO==5.3.6
-Flask-WTF==1.2.1
-Flask-Mail==0.9.1
-Pillow==10.3.0
-python-dotenv==1.0.1
-Werkzeug==3.0.1
-python-dateutil==2.9.0
-python-socketio==5.11.2
-python-engineio==4.9.1
-eventlet==0.36.1
-gunicorn==22.0.0
-psycopg2-binary==2.9.9
-SQLAlchemy==2.0.31
+# Core Flask
+Flask==2.2.5
+Jinja2==3.1.6
+Werkzeug==3.1.3
+itsdangerous==2.2.0
+
+# Database & Supabase
+supabase>=2.0.0
 Flask-SQLAlchemy==3.1.1
-Flask-Migrate==4.0.5
-urllib3==1.26.18
-setuptools==65.5.1
+SQLAlchemy==2.0.41
+psycopg2-binary==2.9.9
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Forms & Validation
+Flask-WTF==1.2.1
+email_validator
+
+# Asynchronous Tasks & WebSockets
+Flask-SocketIO==5.3.6
+python-socketio==5.8.0
+python-engineio==4.7.1
+eventlet==0.35.1
+
+# Utilities & AI/ML
+requests==2.32.3
+python-dateutil>=2.8.2
+Pillow>=10.0.0
+transformers==4.53.1
+typing_extensions==4.13.2
+urllib3==2.4.0
+websocket-client==1.8.0
+
+# Server & Build Tools
+gunicorn==23.0.0
+setuptools==80.9.0
+wheel==0.45.1
 
