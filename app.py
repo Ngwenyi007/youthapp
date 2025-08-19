@@ -65,7 +65,6 @@ init_mail(app)  # Initialize email service
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']  # Loads from environment
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.run(host="0.0.0.0", port=port)
 
 csrf = CSRFProtect(app)
 # Initialize SocketIO for real-time features
