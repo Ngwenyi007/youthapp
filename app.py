@@ -33,7 +33,6 @@ from flask_mail import Mail, Message
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
 from supabase import create_client, Client
-import africastalking
 
 # Local Imports
 from email_service import init_mail, send_welcome_email
@@ -41,11 +40,8 @@ from email_service import init_mail, send_welcome_email
 # Initialize Africa's Talking SDK
 
 # Initialize SMS service
-sms = africastalking.SMS
 # Initialize Africa's Talking SDK
-africastalking.initialize("sandbox", "atsk_4fcc16e1f08079397899b8897b394e794a53f53e690aaf480b9a694b348dfa2cd5f42631")
 # Initialize SMS service
-sms = africastalking.SMS
 # Constants
 POST_FILE = 'posts.json'
 LEVEL_MAP = {
@@ -106,43 +102,12 @@ role_definitions = {
     'Diocese': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'Archdiocese': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
 }
-username = "sandbox"
-api_key ="atsk_4fcc16e1f08079397899b8897b394e794a53f53e690aaf480b9a694b348dfa2cd5f42631"
-africastalking.initialize(username, api_key)
-sms = africastalking.SMS
 
 class LoginForm(FlaskForm):
     username = StringField('Member Code', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
 
-
-def send_sms(recipients, message):
-    """
-    recipients: list of phone numbers in international format, e.g., +2547XXXXXXX
-    message: string to send
-    """
-    try:
-        response = sms.send(message, recipients)
-        print("SMS sent successfully:", response)
-    except Exception as e:
-        print("Error sending SMS:", e)
-def get_parish_members(parish_name):
-    """
-    Returns a list of phone numbers of all members in the given parish.
-    Expects phone numbers in international format, e.g., +2547XXXXXXX
-    """
-    users = load_json(USER_FILE) or []  # Replace USER_FILE with your users JSON file path
-    members = []
-
-    for user in users:
-        if user.get('parish') == parish_name and 'phone' in user:
-            phone = user['phone'].strip()
-            if phone.startswith('0'):
-                phone = '+254' + phone[1:]  # Convert to international format
-            members.append(phone)
-    
-    return members
 def send_welcome_email(recipient, name, code):
     sender_email = "francismatu8@gmail.com"
     sender_password = "kyqdvvtqsvnaljpn"  # NOT your Gmail password, but an app password
