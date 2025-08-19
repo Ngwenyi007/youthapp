@@ -33,14 +33,6 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
 
-# Local Imports
-
-# Initialize Africa's Talking SDK
-
-# Initialize SMS service
-# Initialize Africa's Talking SDK
-# Initialize SMS service
-# Constants
 POST_FILE = 'posts.json'
 LEVEL_MAP = {
     'local': ('local_church', 'local_church'),
@@ -50,15 +42,11 @@ LEVEL_MAP = {
     'archdiocese': ('archdiocese', 'archdiocese')
 }
 # Create mail instance without app context
-mail = Mail()
-mail = None  # Will be initialized later
 
 # Load from environment for security
 load_dotenv()
 
-
 app = Flask(__name__)
-init_mail(app)  # Initialize email service
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']  # Loads from environment
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -100,6 +88,17 @@ role_definitions = {
     'Diocese': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'Archdiocese': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
 }
+
+# Configure your mail settings
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your_password'
+
+mail = Mail()
+mail.init_app(app)
+mail = None  # Will be initialized later
 
 class LoginForm(FlaskForm):
     username = StringField('Member Code', validators=[DataRequired()])
@@ -521,8 +520,6 @@ def login():
     
     return render_template('login.html', form=form)  # Pass form to template
 
-
-
 @app.route('/logout')
 def logout():
     session.pop('user', None)
@@ -539,7 +536,6 @@ def chairman_dashboard():
         return "Unauthorized access", 403
 
     users = load_json(USER_FILE)
-
     # Members in jurisdiction
     members = [
         u for u in users
@@ -551,7 +547,6 @@ def chairman_dashboard():
             u.get('archdiocese') == user.get('archdiocese')
         )
     ]
-
     # Initialize stats with empty dicts to avoid Undefined
     stats = {
         'total': len(members),
@@ -565,7 +560,6 @@ def chairman_dashboard():
         'baptism': {'Yes': 0, 'No': 0},
         'departments': {}
     }
-
     # Loop through members to fill stats
     for m in members:
         edu = m.get('education_level', 'Unknown').strip().title()
@@ -651,7 +645,6 @@ def dashboard():
         if rank.lower().startswith(key):
             target_level = field
             break
-
     # Handle new post creation
     if request.method == 'POST' and 'member' not in rank.lower():
         content = request.form['content']
@@ -807,7 +800,6 @@ def filter_view():
             selected_level == 'diocese' and user['diocese'] == current_user['diocese'] or
             selected_level == 'archdiocese' and user['archdiocese'] == current_user['archdiocese']
         )
-
         # Check if department (e.g. secretary, chaplain) is in their rank
         department_match = selected_department.lower() in user['rank'].lower()
 
@@ -828,7 +820,6 @@ def register():
             code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
             if code not in existing_codes:
                 break
-
         # Extract form fields
         full_name = form['full_name']
         password = form['password']
@@ -918,11 +909,9 @@ def register():
                 "privacy_level": "friends"
             }
         }
-
         # ✅ Save user
         data.append(user)
         save_data(USER_FILE, data)
-
         # ✅ Send email
         try:
             send_welcome_email(
@@ -943,7 +932,6 @@ def register():
         p['comments'] = comments.get(p['id'], [])
         p['like_count'] = len(p.get('likes', []))
         p['user_liked'] = username in p.get('likes', [])
-
     # Get upcoming events
     upcoming_events = []
     for event in events.get('events', []):
@@ -1176,11 +1164,9 @@ def create_post():
     if not user:
         flash('User data not found', 'error')
         return redirect(url_for('login'))
-
     # Update session with fresh data
     session['user'] = user
     rank = user.get('rank', '').lower()
-
     # Determine target level
     level_map = {
         'local': 'local_church',
@@ -1262,7 +1248,6 @@ def pin_post(post_id):
             post['pinned'] = True
         elif post['author_code'] == user['code']:
             post['pinned'] = False  # Unpin other posts from same user
-
     save_posts(posts)
     flash("Post pinned successfully.", "success")
     return redirect(url_for('dashboard'))
@@ -1356,7 +1341,6 @@ def events():
             event.get('parish') == current_user.get('parish') and
             event.get('local_church') == current_user.get('local_church')
         )
-
     # Handle both dict-based and list-based formats
     if isinstance(events_data, dict):
         event_list = events_data.get('events', [])
@@ -1380,7 +1364,6 @@ def create_event():
 
     users = load_json(USER_FILE)
     current_user = session['user']
-
     # Find full user record
     user = next((u for u in users if u['code'] == current_user['code']), None)
     if not user:
@@ -1393,7 +1376,6 @@ def create_event():
 
     if request.method == 'POST':
         events_data = load_json(EVENT_FILE)
-
         # Handle max_attendees safely
         max_attendees_raw = request.form.get('max_attendees', '').strip()
         max_attendees = int(max_attendees_raw) if max_attendees_raw.isdigit() else None
@@ -1424,7 +1406,6 @@ def create_event():
             events_data.append(event)
 
         save_json(EVENT_FILE, events_data)
-
         # Notify members in same jurisdiction
         for u in users:
             if u['code'] != user['code'] and (
@@ -1595,13 +1576,11 @@ def conversation(other_user_id):
     if not other_user:
         flash('User not found.')
         return redirect('/messages')
-
     # Handle both dict-based and list-based message storage
     if isinstance(messages_data, dict):
         all_messages = messages_data.get('conversations', [])
     else:
         all_messages = messages_data
-
     # Get conversation messages
     conversation_messages = [
         msg for msg in all_messages
@@ -1613,7 +1592,6 @@ def conversation(other_user_id):
     ]
 
     conversation_messages.sort(key=lambda m: m.get('timestamp', ''))
-
     # Mark messages as read
     for msg in conversation_messages:
         if msg.get('receiver_id') == current_user['code']:
@@ -1628,7 +1606,6 @@ def conversation(other_user_id):
         current_user=current_user
     )
 # Prayer Requests and Testimonies
-
 @app.route('/prayers')
 def prayers():
     if 'username' not in session and 'user' not in session:
@@ -1654,7 +1631,6 @@ def prayers():
             prayer.get('parish') == user.get('parish') and
             prayer.get('local_church') == user.get('local_church')
         )
-
     # Handle both dict-based and list-based formats
     if isinstance(prayers_data, dict):
         requests_list = prayers_data.get('requests', [])
@@ -1690,7 +1666,6 @@ def add_prayer():
     prayers = load_json(PRAYER_FILE)
     # Get user code from session (support both old and new format)
     code = session.get('username') or session.get('user', {}).get('code')
-
     # Find current user in list
     user = next((u for u in users if u.get('code') == code), None)
     if not user:
@@ -1732,7 +1707,6 @@ def pray_for(prayer_id):
     
     # Get user code from session (support both old and new format)
     code = session.get('username') or session.get('user', {}).get('code')
-
     # Find current user in list
     user = next((u for u in users if u.get('code') == code), None)
     if not user:
@@ -1757,16 +1731,13 @@ def notifications():
 
     notifications_data = load_json(NOTIFICATION_FILE)
     code = current_user['code']
-
     # Handle both dict-based and list-based formats
     if isinstance(notifications_data, dict):
         user_notifications = notifications_data.get(code, [])
     else:  # list format
         user_notifications = [n for n in notifications_data if n.get('user_code') == code]
-
     # Sort newest first
     user_notifications.sort(key=lambda n: n.get('timestamp', ''), reverse=True)
-
     # Add "time ago" field
     for notification in user_notifications:
         if 'timestamp' in notification:
@@ -1868,14 +1839,12 @@ def delete_document(filename):
     if 'username' not in session:
         flash("Please log in.", "warning")
         return redirect(url_for('login'))
-
     # Load the list of documents if you are tracking them in JSON
     docs = []
     if os.path.exists("documents.json"):
         docs = load_json("documents.json")
 
     doc = next((d for d in docs if d['filename'] == filename), None)
-
     # If not found in JSON, still try deleting from uploads folder
     if not doc:
         file_path = os.path.join('uploads/documents', filename)
@@ -1885,18 +1854,15 @@ def delete_document(filename):
         else:
             flash("Document not found.", "danger")
         return redirect(url_for('documents'))
-
     # Only uploader or chairman can delete
     current_user = get_current_user()
     if doc['uploader'] != session['username'] and "chairman" not in current_user['rank'].lower():
         flash("You are not allowed to delete this document.", "danger")
         return redirect(url_for('documents'))
-
     # Delete file from disk
     file_path = os.path.join('uploads/documents', filename)
     if os.path.exists(file_path):
         os.remove(file_path)
-
     # Remove record from JSON
     docs = [d for d in docs if d['filename'] != filename]
     save_json("documents.json", docs)
@@ -1936,13 +1902,11 @@ def search():
                 item['parish'] == current_user['parish'] and
                 item['local_church'] == current_user['local_church']
             )
-        
         # Search posts
         for post in posts:
             if is_within_boundary(post) and query.lower() in post['content'].lower():
                 post['time_ago'] = format_timestamp(post['timestamp'])
                 results['posts'].append(post)
-        
         # Search users
         for user_id, user_data in users.items():
             if (is_within_boundary(user_data) and 
@@ -1967,7 +1931,6 @@ def view_members():
 
     with open('users.json') as f:
         users = json.load(f)
-
     # Function to check if user is in jurisdiction
     def in_jurisdiction(u):
         # If chairman — filter based on chairman's level
@@ -1995,7 +1958,6 @@ def view_members():
         return False
 
     members_in_jurisdiction = [u for u in users if in_jurisdiction(u)]
-
     # --- Statistics ---
     stats = {
         "total": len(members_in_jurisdiction),
@@ -2011,7 +1973,6 @@ def view_members():
         # Education
         edu = u.get('education_level', 'Unknown')
         stats['education'][edu] = stats['education'].get(edu, 0) + 1
-
         # Age group
         try:
             age = int(u.get('age', 0))
@@ -2025,7 +1986,6 @@ def view_members():
                 stats['age_groups']["above_40"] += 1
         except ValueError:
             pass
-
         # Departments
         dept = u.get('department', 'Unknown')
         stats['departments'][dept] = stats['departments'].get(dept, 0) + 1
@@ -2045,14 +2005,12 @@ def view_my_details():
 
     if not user_data:
         return "User details not found", 404
-
     # Convert registration_date from string to datetime
     if 'registration_date' in user_data and isinstance(user_data['registration_date'], str):
         try:
             user_data['registration_date'] = datetime.fromisoformat(user_data['registration_date'])
         except ValueError:
             pass  # Leave it as string if parsing fails
-
     return render_template('view_my_details.html', user=user_data)
 
 @app.route('/manifest.json')
