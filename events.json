@@ -66,5 +66,23 @@
         "rsvp": [],
         "max_attendees": 100,
         "created_at": "2025-08-10T17:42:19.492277"
+    },
+    {
+        "id": "1475a294-d2b5-4e85-8424-dcad12e6c271",
+        "title": "Rrrr",
+        "description": "Hhhh",
+        "start_date": "2025-10-23T23:58",
+        "end_date": "2026-02-27T23:59",
+        "location": "Ggggg",
+        "created_by": "Francis Kabue",
+        "creator_id": "W6DNV",
+        "archdiocese": "Nyeri",
+        "diocese": "Nyeri Archdiocese",
+        "denary": "Tetu",
+        "parish": "Kangaita Parish",
+        "local_church": "St Paul Kiawaithanji",
+        "rsvp": [],
+        "max_attendees": 100,
+        "created_at": "2025-08-18T23:59:25.336050"
     }
 ]

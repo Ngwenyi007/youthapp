@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import uuid, json, os, re
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import base64
 from PIL import Image
 import io
@@ -16,22 +16,56 @@ from functools import wraps
 import fcntl
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFProtect
+from flask_mail import Mail, Message
+from flask import current_app
+from threading import Thread
+from email_service import init_mail, send_welcome_email
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from flask_wtf.csrf import CSRFProtect
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired
+from flask import Flask, render_template, redirect, url_for, session, flash, current_app
+import africastalking
+
+# Initialize Africa's Talking SDK
+
+# Initialize SMS service
+sms = africastalking.SMS
+# Initialize Africa's Talking SDK
+africastalking.initialize("sandbox", "atsk_4fcc16e1f08079397899b8897b394e794a53f53e690aaf480b9a694b348dfa2cd5f42631")
+# Initialize SMS service
+sms = africastalking.SMS
+# Constants
+POST_FILE = 'posts.json'
+LEVEL_MAP = {
+    'local': ('local_church', 'local_church'),
+    'parish': ('parish', 'parish'),
+    'denary': ('denary', 'denary'),
+    'diocese': ('diocese', 'diocese'),
+    'archdiocese': ('archdiocese', 'archdiocese')
+}
+# Create mail instance without app context
+mail = Mail()
+mail = None  # Will be initialized later
 
 # Load from environment for security
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "your-service-role-key")
 load_dotenv()
 
 
 app = Flask(__name__)
-socketio = SocketIO(app, async_mode='eventlet')  # Critical for Render
+init_mail(app)  # Initialize email service
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']  # Loads from environment
-app.secret_key = 'youth_secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-
+csrf = CSRFProtect(app)
 # Initialize SocketIO for real-time features
+csrf = CSRFProtect(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+mail = Mail()
 
 # Create upload directories
 os.makedirs('uploads/profiles', exist_ok=True)
@@ -60,18 +94,85 @@ role_definitions = {
     'Parish': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'Denary': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'Diocese': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
-    'National': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
+    'Archdiocese': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
 }
+username = "sandbox"
+api_key ="atsk_4fcc16e1f08079397899b8897b394e794a53f53e690aaf480b9a694b348dfa2cd5f42631"
+africastalking.initialize(username, api_key)
+sms = africastalking.SMS
+
+class LoginForm(FlaskForm):
+    username = StringField('Member Code', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
 
-# Test connection
-def test_connection():
-    data = {"name": "Francis", "role": "chairman"}
-    supabase.table("users").insert(data).execute()
-    res = supabase.table("users").select("*").execute()
-    print(res.data)
+def send_sms(recipients, message):
+    """
+    recipients: list of phone numbers in international format, e.g., +2547XXXXXXX
+    message: string to send
+    """
+    try:
+        response = sms.send(message, recipients)
+        print("SMS sent successfully:", response)
+    except Exception as e:
+        print("Error sending SMS:", e)
+def get_parish_members(parish_name):
+    """
+    Returns a list of phone numbers of all members in the given parish.
+    Expects phone numbers in international format, e.g., +2547XXXXXXX
+    """
+    users = load_json(USER_FILE) or []  # Replace USER_FILE with your users JSON file path
+    members = []
 
+    for user in users:
+        if user.get('parish') == parish_name and 'phone' in user:
+            phone = user['phone'].strip()
+            if phone.startswith('0'):
+                phone = '+254' + phone[1:]  # Convert to international format
+            members.append(phone)
+    
+    return members
+def send_welcome_email(recipient, name, code):
+    sender_email = "francismatu8@gmail.com"
+    sender_password = "kyqdvvtqsvnaljpn"  # NOT your Gmail password, but an app password
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
 
+    subject = "Welcome to Youth App 🎉"
+    body = f"""
+    Hello {name},
+
+    Welcome to our youth app! 🎊
+    Your member code is: {code}.
+
+    Please keep it safe — you’ll need it to log in.
+
+    Regards,
+    The Youth App Team
+    """
+
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = recipient
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    # Send
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        user_posts=user_posts
+
+def get_user_by_code(user_code):
+    """Fetch user data from your database by user code"""
+    try:
+        with open('users.json', 'r') as f:  # Assuming JSON storage
+            users = json.load(f)
+            return next((u for u in users if u.get('code') == user_code), None)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -294,7 +395,6 @@ def save_users(users):
         json.dump(users, f, indent=4)
 
 # ======= Helper Functions =======
-from datetime import datetime
 
 def time_since(timestamp):
     now = datetime.utcnow()
@@ -349,7 +449,8 @@ def filter_posts(user):
     posts = load_json('posts.json')
     filtered = []
     for post in posts:
-        if post['diocese'] == user['diocese'] and \
+        if post['archdiocese'] == user['archdiocese'] and \
+           post['diocese'] == user['diocese'] and \
            post['denary'] == user['denary'] and \
            post['parish'] == user['parish'] and \
            post['local_church'] == user['local_church']:
@@ -364,7 +465,10 @@ def in_jurisdiction(post):
         return post['denary'] == current_user['denary']
     elif post['target_level'] == 'diocese':
         return post['diocese'] == current_user['diocese']
+    elif post['target_level'] == 'archdiocese':
+        return post['archdiocese'] == current_user['archdiocese']
     return False
+
 # ======= Routes =======
 @app.template_filter('format_timestamp')
 def format_timestamp_filter(timestamp):
@@ -395,26 +499,32 @@ def index():
     return redirect(url_for('login'))
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        code = request.form.get('code', '').strip()
-        password = request.form.get('password', '').strip()
+    # Create form instance
+    form = LoginForm()
+    
+    if form.validate_on_submit():  # Handles POST and validation
+        code = form.username.data.strip()  # Using username field for member code
+        password = form.password.data.strip()
 
-        # Load users from JSON
+        # Load users
         try:
             with open('users.json', 'r') as f:
                 users = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             users = []
 
-        # Search for matching user
-        for user in users:
-            if user.get('code') == code and user.get('password') == password:
-                # ✅ Store both for compatibility
-                session['username'] = user['code']
-                session['username'] = user['username']
-                session['code'] = user['code']
-                session['user'] = {
-                    'code': user['code'],
+        # Find matching user
+        user = next((u for u in users 
+                   if u.get('code') == code 
+                   and u.get('password') == password), None)
+
+        if user:
+            # Set session data
+            session.update({
+                'username': user.get('username', code),
+                'code': code,
+                'user': {
+                    'code': code,
                     'full_name': user['full_name'],
                     'rank': user['rank'],
                     'local_church': user['local_church'],
@@ -422,20 +532,22 @@ def login():
                     'denary': user['denary'],
                     'diocese': user['diocese']
                 }
-                session.permanent = True
 
-                # Update last active
-                user['last_active'] = datetime.now().isoformat()
-                with open('users.json', 'w') as f:
-                    json.dump(users, f, indent=4)
+            })
+            session.permanent = True
+            
+            # Update last active
+            user['last_active'] = datetime.now().isoformat()
+            with open('users.json', 'w') as f:
+                json.dump(users, f, indent=4)
+            
+            flash('✅ Login successful!', 'success')
+            return redirect(url_for('dashboard'))
+        
+        flash('❌ Invalid credentials', 'error')
+    
+    return render_template('login.html', form=form)  # Pass form to template
 
-                flash('✅ Login successful!', 'success')
-                return redirect(url_for('dashboard'))
-
-        flash('❌ Invalid code or password.', 'error')
-        return redirect(url_for('login'))
-
-    return render_template('login.html')
 
 
 @app.route('/logout')
@@ -462,7 +574,8 @@ def chairman_dashboard():
             u.get('local_church') == user.get('local_church') or
             u.get('parish') == user.get('parish') or
             u.get('denary') == user.get('denary') or
-            u.get('diocese') == user.get('diocese')
+            u.get('diocese') == user.get('diocese') or
+            u.get('archdiocese') == user.get('archdiocese')
         )
     ]
 
@@ -545,6 +658,7 @@ def dashboard():
     parish = current_user.get('parish')
     denary = current_user.get('denary')
     diocese = current_user.get('diocese')
+    archdiocese = current_user.get('archdiocese')
 
     # Filters
     filter_level = request.args.get('filter_level', 'all')
@@ -556,7 +670,8 @@ def dashboard():
         'local': 'local_church',
         'parish': 'parish',
         'denary': 'denary',
-        'diocese': 'diocese'
+        'diocese': 'diocese',
+        'archdiocese': 'archdiocese'
     }
     target_level = None
     for key, field in level_map.items():
@@ -580,6 +695,7 @@ def dashboard():
             "pinned": False,
             "likes": [],
             "target_level": target_level,
+            "archdiocese": archdiocese,
             "diocese": diocese,
             "denary": denary,
             "parish": parish,
@@ -599,6 +715,8 @@ def dashboard():
             return post.get('denary') == denary
         elif target == 'diocese':
             return post.get('diocese') == diocese
+        elif target == 'archdiocese':
+            return post.get('archdiocese') == archdiocese
         return False
 
     # Filter posts
@@ -628,7 +746,8 @@ def dashboard():
     if current_user.get('role', '').lower() == 'chairman':
         members = [
             u for u in users
-            if u.get('diocese') == diocese
+            if u.get('archdiocese') == archdiocese
+            and u.get('diocese') == diocese
             and u.get('denary') == denary
             and u.get('parish') == parish
             and u.get('local_church') == local_church
@@ -666,6 +785,7 @@ def dashboard():
         parish=parish,
         denary=denary,
         diocese=diocese,
+        archdiocese=archdiocese,
         time_since=time_since,
         user_rank=rank,
         user_code=code,
@@ -686,6 +806,7 @@ def members():
     all_users = load_json('users.json')
     same_jurisdiction = [
         u for u in all_users if
+        u['archdiocese'] == user['archdiocese'] and
         u['diocese'] == user['diocese'] and
         u['denary'] == user['denary'] and
         u['parish'] == user['parish'] and
@@ -710,7 +831,8 @@ def filter_view():
             selected_level == 'local' and user['local_church'] == current_user['local_church'] or
             selected_level == 'parish' and user['parish'] == current_user['parish'] or
             selected_level == 'denary' and user['denary'] == current_user['denary'] or
-            selected_level == 'diocese' and user['diocese'] == current_user['diocese']
+            selected_level == 'diocese' and user['diocese'] == current_user['diocese'] or
+            selected_level == 'archdiocese' and user['archdiocese'] == current_user['archdiocese']
         )
 
         # Check if department (e.g. secretary, chaplain) is in their rank
@@ -720,7 +842,6 @@ def filter_view():
             filtered_users.append(user)
 
     return render_template('filtered_members.html', users=filtered_users, level=selected_level, department=selected_department)
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -735,26 +856,34 @@ def register():
             if code not in existing_codes:
                 break
 
+        # Extract form fields
         full_name = form['full_name']
         password = form['password']
         phone = form['phone']
         gender = form['gender']
-        age = form['age']
         level = form['level']
         email = form['email']
         role = form['role']
         rank = f"{level} {role}".lower()
-        birth_day = form.get('birth_day')
-        birth_month = form.get('birth_month')
-        birth_year = form.get('birth_year')
-        dob = f"{birth_day} {birth_month} {birth_year}"
+
+        birth_day = int(form.get('birth_day'))
+        birth_month = int(form.get('birth_month'))
+        birth_year = int(form.get('birth_year'))
+        dob = date(birth_year, birth_month, birth_day)
+
+        today = date.today()
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+        print("User age is:", age)
+
+        # Optional fields
         local_church = form.get('local_church', '')
         parish = form.get('parish', '')
         denary = form.get('denary', '')
-        baptism = form.get('baptism','')
-        marital_status = form.get('marital_status','')
-        confirmation = form.get('confirmation','')
         diocese = form.get('diocese', '')
+        archdiocese = form.get('archdiocese', '')
+        baptism = form.get('baptism', '')
+        confirmation = form.get('confirmation', '')
+        marital_status = form.get('marital_status', '')
         residence = form.get('residence', '')
         education_level = form.get('education_level', '')
         disability = form.get('disability', '')
@@ -762,33 +891,40 @@ def register():
         institution_type = form.get('institution_type', '')
         talents = form.get('talents', '')
         bio = form.get('bio', '')
-        # Check for leader uniqueness
+
+        # Check leader uniqueness (if required)
         if role in ['chairman', 'secretary', 'treasurer', 'chaplain', 'matron', 'patron', 'organising secretary']:
             for u in data:
                 if u['rank'] == rank:
-                    if (church_level == 'local' and u['local_church'] == local_church) or \
-                       (church_level == 'parish' and u['parish'] == parish) or \
-                       (church_level == 'denary' and u['denary'] == denary) or \
-                       (church_level == 'diocese' and u['diocese'] == diocese) or \
-                       (church_level == 'international'):
-                        return render_template('register.html', error=f"A {rank} already exists in this jurisdiction.", form_data=form)
+                    if (level == 'local' and u['local_church'] == local_church) or \
+                       (level == 'parish' and u['parish'] == parish) or \
+                       (level == 'denary' and u['denary'] == denary) or \
+                       (level == 'diocese' and u['diocese'] == diocese) or \
+                       (level == 'archdiocese' and u['archdiocese'] == archdiocese) or \
+                       (level == 'international'):
+                        return render_template('register.html',
+                            error=f"A {rank} already exists in this jurisdiction.", 
+                            form_data=form
+                        )
 
+        # Build user object
         user = {
-            'id': str(uuid.uuid4()),  # ✅ assign unique id
+            'id': str(uuid.uuid4()),
             'full_name': full_name,
             'code': code,
             'password': password,
             'phone': phone,
             'gender': gender,
-            'email' : email ,
+            'email': email,
             'age': age,
             'rank': rank,
+            'dob': dob.isoformat(),
+            'username': code,
             'local_church': local_church,
             'parish': parish,
-            'dob': dob,
-            'username':code,
             'denary': denary,
             'diocese': diocese,
+            'archdiocese': archdiocese,
             'residence': residence,
             'education_level': education_level,
             'disability': disability,
@@ -796,10 +932,9 @@ def register():
             'institution_type': institution_type,
             'talents': talents,
             'bio': bio,
-            'marital_status' : marital_status,
-            'residence' : residence,
-            'confirmation' : confirmation,
-            'baptism' : baptism,
+            'marital_status': marital_status,
+            'confirmation': confirmation,
+            'baptism': baptism,
             "profile_picture": None,
             "joined_date": datetime.now().isoformat(),
             "last_active": datetime.now().isoformat(),
@@ -808,14 +943,28 @@ def register():
                 "email_notifications": True,
                 "push_notifications": True,
                 "privacy_level": "friends"
-                         }
-          }
+            }
+        }
+
+        # ✅ Save user
         data.append(user)
         save_data(USER_FILE, data)
+
+        # ✅ Send email
+        try:
+            send_welcome_email(
+                recipient=user['email'],
+                name=user['full_name'],
+                code=user['code']
+            )
+            flash('Registration successful! Check your email for your member code', 'success')
+        except Exception as e:
+            flash('Registration succeeded but email failed to send', 'warning')
+            print(f"Email error: {str(e)}")
+
         return redirect(url_for('dashboard'))
 
-    return render_template('register.html')
-
+    return render_template('register.html', current_year=datetime.now().year)
     for p in visible_posts:
         p['time_ago'] = format_timestamp(p['timestamp'])
         p['comments'] = comments.get(p['id'], [])
@@ -964,6 +1113,7 @@ def edit_member(user_code):
         user['parish'] = request.form['parish']
         user['denary'] = request.form['denary']
         user['diocese'] = request.form['diocese']
+        user['archdiocese'] = request.form['archdiocese']
         user['dob'] = request.form['dob']
         user['residence'] = request.form['residence']
         user['education_level'] = request.form['education_level']
@@ -1042,38 +1192,42 @@ def update_profile():
 
     return render_template('update_profile.html', user=user)
 
-
-
 @app.route('/create_post', methods=['GET', 'POST'])
 def create_post():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    user = session['user']
+    # Get fresh user data
+    current_user_code = session['user'].get('code')
+    user = get_user_by_code(current_user_code)
+    if not user:
+        flash('User data not found', 'error')
+        return redirect(url_for('login'))
+
+    # Update session with fresh data
+    session['user'] = user
     rank = user.get('rank', '').lower()
 
-    # Map rank to jurisdiction level
+    # Determine target level
     level_map = {
         'local': 'local_church',
         'parish': 'parish',
         'denary': 'denary',
-        'diocese': 'diocese'
+        'diocese': 'diocese',
+        'archdiocese': 'archdiocese'
     }
-    target_level = None
-    for key, field in level_map.items():
-        if rank.startswith(key):
-            target_level = field
-            break
-
-    # Only leaders can post
+    target_level = next((field for key, field in level_map.items() if rank.startswith(key)), None)
     if not target_level or 'member' in rank:
         return "Unauthorized to post", 403
 
     if request.method == 'POST':
-        content = request.form.get('content')
+        content = request.form.get('content', '').strip()
         post_type = request.form.get('post_type', 'general')
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if not content:
+            flash('Post content cannot be empty', 'error')
+            return redirect(url_for('create_post'))
 
+        # Construct post object
         post = {
             'id': str(uuid.uuid4()),
             'author': user['full_name'],
@@ -1081,7 +1235,7 @@ def create_post():
             'rank': user['rank'],
             'content': content,
             'type': post_type,
-            'timestamp': timestamp,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'pinned': False,
             'likes': [],
             'target_level': target_level,
@@ -1089,56 +1243,37 @@ def create_post():
             'parish': user.get('parish'),
             'denary': user.get('denary'),
             'diocese': user.get('diocese'),
+            'archdiocese': user.get('archdiocese'),
             'comments': []
         }
 
         try:
-            posts = load_json(POST_FILE)
-        except (FileNotFoundError, json.JSONDecodeError):
-            posts = []
+            # Save post to JSON
+            posts = load_json(POST_FILE) or []
+            posts.insert(0, post)
+            save_json(POST_FILE, posts)
+            flash('Post created successfully!', 'success')
 
-        posts.insert(0, post)
-        save_json(POST_FILE, posts)
+            # Send SMS to parish members
+            parish = user.get('parish')
+            if parish:
+                members = get_parish_members(parish)  # return list of phone numbers
+                message = f"New post in your parish:\n{content[:100]}..."
+                send_sms(members, message)
+
+        except Exception as e:
+            flash(f'Error saving post or sending SMS: {str(e)}', 'error')
 
         return redirect(url_for('create_post'))
 
-    # Show only current user's posts
+    # If GET, show the form with user's posts
     try:
-        posts = load_json(POST_FILE)
-    except (FileNotFoundError, json.JSONDecodeError):
-        posts = []
-
-    user_posts = [p for p in posts if p['author_code'] == user['code']]
+        posts = load_json(POST_FILE) or []
+        user_posts = [p for p in posts if p.get('author_code') == user['code']]
+    except Exception:
+        user_posts = []
 
     return render_template('create_post.html', user=user, user_posts=user_posts)
-
-@app.route('/view_post/<post_id>', methods=['GET', 'POST'])
-def view_post(post_id):
-    user = get_logged_in_user()
-    if not user:
-        return redirect(url_for('login'))
-
-    posts = load_posts()
-    post = next((p for p in posts if p['id'] == post_id), None)
-    if not post:
-        return 'Post not found', 404
-
-    # Add comment
-    if request.method == 'POST':
-        comment = request.form.get('comment')
-        if comment:
-            timestamp = datetime.now().isoformat()
-            post.setdefault('comments', []).append({
-                'author': user['full_name'],
-                'rank': user['rank'],
-                'church': user.get('local_church'),
-                'timestamp': timestamp,
-                'content': comment
-            })
-            save_posts(posts)
-            return redirect(url_for('view_post', post_id=post_id))
-    return render_template('view_post.html', user=user, post=post)
-
 
 # ------------------ PIN POST ------------------
 @app.route('/pin_post/<post_id>', methods=['POST'])
@@ -1242,6 +1377,7 @@ def events():
 
     def is_within_boundary(event):
         return (
+            event.get('archdiocese') == current_user.get('archdiocese') and
             event.get('diocese') == current_user.get('diocese') and
             event.get('denary') == current_user.get('denary') and
             event.get('parish') == current_user.get('parish') and
@@ -1298,6 +1434,7 @@ def create_event():
             'location': request.form['location'],
             'created_by': user['full_name'],
             'creator_id': user['code'],
+            'archdiocese': user['archdiocese'],
             'diocese': user['diocese'],
             'denary': user['denary'],
             'parish': user['parish'],
@@ -1318,6 +1455,7 @@ def create_event():
         # Notify members in same jurisdiction
         for u in users:
             if u['code'] != user['code'] and (
+                u['archdiocese'] == user['archdiocese'] and
                 u['diocese'] == user['diocese'] and
                 u['denary'] == user['denary'] and
                 u['parish'] == user['parish'] and
@@ -1354,6 +1492,7 @@ def view_profile(username):
     # Check if users are in same boundary
     def is_within_boundary():
         return (
+            profile_user['archdiocese'] == current_user['archdiocese'] and
             profile_user['diocese'] == current_user['diocese'] and
             profile_user['denary'] == current_user['denary'] and
             profile_user['parish'] == current_user['parish'] and
@@ -1536,6 +1675,7 @@ def prayers():
 
     def is_within_boundary(prayer):
         return (
+            prayer.get('archdiocese') == user.get('archdiocese') and
             prayer.get('diocese') == user.get('diocese') and
             prayer.get('denary') == user.get('denary') and
             prayer.get('parish') == user.get('parish') and
@@ -1595,6 +1735,7 @@ def add_prayer():
         'author_id': session['username'],
         'anonymous': anonymous,
         'timestamp': datetime.now().isoformat(),
+        'archdiocese': user['archdiocese'],
         'diocese': user['diocese'],
         'denary': user['denary'],
         'parish': user['parish'],
@@ -1816,6 +1957,7 @@ def search():
         
         def is_within_boundary(item):
             return (
+                item['archdiocese'] == current_user['archdiocese'] and
                 item['diocese'] == current_user['diocese'] and
                 item['denary'] == current_user['denary'] and
                 item['parish'] == current_user['parish'] and
@@ -1865,13 +2007,17 @@ def view_members():
                 return u.get('denary') == current_user.get('denary')
             elif "diocese" in current_user['rank'].lower():
                 return u.get('diocese') == current_user.get('diocese')
+            elif "archdiocese" in current_user['rank'].lower():
+                return u.get('archdiocese') == current_user.get('archdiocese')
+
         else:
             # Non-chairman sees only same jurisdiction
             return (
                 u.get('local_church') == current_user.get('local_church') and
                 u.get('parish') == current_user.get('parish') and
                 u.get('denary') == current_user.get('denary') and
-                u.get('diocese') == current_user.get('diocese')
+                u.get('diocese') == current_user.get('diocese') and
+                u.get('archdiocese') == current_user.get('archdiocese')
             )
         return False
 
@@ -1968,6 +2114,7 @@ def add_member():
             "parish": current_user['parish'],
             "denary": current_user['denary'],
             "diocese": current_user['diocese'],
+            "archdiocese": current_user['archdiocese'],
             "email": request.form.get('email', ''),
             "phone": request.form.get('phone', ''),
             "bio": '',
@@ -1987,6 +2134,5 @@ def add_member():
 
     return render_template('add_member.html', user=current_user)
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
-    test_connection()
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

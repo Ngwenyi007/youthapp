@@ -17,220 +17,246 @@
     {% endwith %}
 
     <form method="POST" class="register-form">
-        <div class="form-sections">
-            <!-- Personal Information -->
-            <div class="form-section">
-                <h3>👤 Personal Information</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="full_name">Full Name *</label>
-                        <input type="text" id="full_name" name="full_name" required maxlength="100"
-                               placeholder="Enter your full name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="age">Age *</label>
-                        <input type="number" id="age" name="age" required min="13" max="100"
-                               placeholder="Your age">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" maxlength="100"
-                               placeholder="your.email@example.com">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" maxlength="20"
-                               placeholder="+1234567890">
-                    </div>
-                </div>
-
-                    <div class="form-group">
-<label for="gender">Gender:</label>
-<select name="gender" required>
-  <option value="">Select Gender</option>
-  <option value="Male">Male</option>
-  <option value="Female">Female</option>
-  <option value="Other">Other</option>
-</select>
-    </div>
-
-<br>                
-                    <div class="form-group">
-    <select name="disability">
-        <option value="" disabled selected>Disability (if any)</option>
-        <option value="none">None</option>
-        <option value="physical">Physical</option>
-        <option value="visual">Visual</option>
-        <option value="hearing">Hearing</option>
-        <option value="other">Other</option>
-    </select>
-</div>
-                    <div class="form-group">
-
-<label>Date of Birth:</label>
-<div style="display: flex; gap: 10px;">
-  <select name="birth_day" required>
-    <option value="">Day</option>
-    {% for d in range(1, 32) %}
-      <option value="{{ d }}">{{ d }}</option>
-    {% endfor %}
-  </select>
-</div>
-                    <div class="form-group">
-
-  <select name="birth_month" required>
-    <option value="">Month</option>
-    {% for m in [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'] %}
-      <option value="{{ m }}">{{ m }}</option>
-    {% endfor %}
-  </select>
-</div>
-                    <div class="form-group">
-
-  <select name="birth_year" required>
-    <option value="">Year</option>
-    {% for y in range(1940, 2026) | reverse %}
-      <option value="{{ y }}">{{ y }}</option>
-    {% endfor %}
-  </select>
-</div>
-                    <div class="form-group">
-
-    <select name="occupation_status">
-        <option value="" disabled selected>Occupation Status</option>
-        <option value="student">Student</option>
-        <option value="employed">Employed</option>
-        <option value="unemployed">Unemployed</option>
-    </select>
-</div>
-                    <div class="form-group">
-
-    <select name="institution_type">
-        <option value="" disabled selected>If Student, Choose Institution Type</option>
-        <option value="secondary">Secondary</option>
-        <option value="college">College</option>
-        <option value="polytechnic">Polytechnic</option>
-        <option value="university">University</option>
-        <option value="other">Other</option>
-    </select>
-</div>
-<!-- Marital Status -->
-<label for="marital_status">Marital Status:</label>
-<select name="marital_status" id="marital_status" required>
-    <option value="">-- Select Marital Status --</option>
-    <option value="Single">Single</option>
-    <option value="Married">Married</option>
-    <option value="Widowed">Widowed</option>
-    <option value="Divorced">Divorced</option>
-</select>
-<br><br>
-
-<!-- Confirmation -->
-<label for="confirmation">Confirmation:</label>
-<select name="confirmation" id="confirmation" required>
-    <option value="">-- Select Confirmation Status --</option>
-    <option value="Yes">Yes</option>
-    <option value="No">No</option>
-</select>
-<br><br>
-
-<!-- Baptism -->
-<label for="baptism">Baptism:</label>
-<select name="baptism" id="baptism" required>
-    <option value="">-- Select Baptism Status --</option>
-    <option value="Yes">Yes</option>
-    <option value="No">No</option>
-</select>
-<br><br>
-
-<!-- Residence -->
-<label for="residence">Residence:</label>
-<input type="text" name="residence" id="residence" placeholder="Enter residence" required>
-<br><br>
-                <div class="form-group full-width">
-                    <label for="bio">Bio / About Yourself (Optional)</label>
-                    <textarea id="bio" name="bio" rows="3" maxlength="500"
-                              placeholder="Tell us about yourself..."></textarea>
-                    <div class="char-count">
-                        <span id="bioCount">0</span>/500 characters
-                    </div>
-                </div>
-            </div>
-
-            <!-- Organization Details -->
-            <div class="form-section">
-                <h3>⛪ Organization Details</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="diocese">Diocese *</label>
-                        <input type="text" id="diocese" name="diocese" required maxlength="100"
-                               placeholder="Your diocese">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="denary">Denary *</label>
-                        <input type="text" id="denary" name="denary" required maxlength="100"
-                               placeholder="Your denary">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="parish">Parish *</label>
-                        <input type="text" id="parish" name="parish" required maxlength="100"
-                               placeholder="Your parish">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="local_church">Local Church *</label>
-                        <input type="text" id="local_church" name="local_church" required maxlength="100"
-                               placeholder="Your local church">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Leadership Information -->
-            <div class="form-section">
-                <h3>👑  level</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="level">Organization Level *</label>
-                        <select id="level" name="level" required onchange="updateRoles()">
-                            <option value="">Select level...</option>
-                            <option value="member">Youth Member</option>
-                            <option value="local">Local Church</option>
-                            <option value="parish">Parish </option>
-                            <option value="denary">Denary</option>
-                            <option value="diocese">Diocese</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="role">Specific Role *</label>
-                        <select id="role" name="role" required>
-                           <option value="">First select a level</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="role-info">
-                    <p id="role-description">Select a level to see available roles</p>
-                </div>
-            </div>
-
-            <!-- Security -->
-            <div class="form-section">
-                <h3>🔒 Account Security</h3>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <!-- Personal Information -->
+        <div class="form-section">
+            <h3>👤 Personal Information</h3>
+            <div class="form-grid">
                 <div class="form-group">
-    <div class="password-wrapper">
-        <input type="password" id="password" name="password" placeholder="Password" required>
-        <span class="toggle-password" onclick="togglePassword()">👁️</span>
-    </div>
-                           placeholder="Create a secure password">
-                    <small class="password-hint">Minimum 6 characters</small>
+                    <label for="full_name">Full Name *</label>
+                    <input type="text" id="full_name" name="full_name" required maxlength="100" placeholder="Enter your full name">
                 </div>
+
+
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" maxlength="100" placeholder="your.email@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" maxlength="20" placeholder="+1234567890">
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Gender *</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="disability">Disability</label>
+                    <select id="disability" name="disability">
+                        <option value="" selected>None</option>
+                        <option value="physical">Physical</option>
+                        <option value="visual">Visual</option>
+                        <option value="hearing">Hearing</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+<div class="form-group full-width">
+  <label>Date of Birth *</label>
+  <div class="dob-fields">
+    <!-- Day -->
+    <select id="birth_day" name="birth_day" required>
+      <option value="">Day</option>
+      {% for d in range(1, 32) %}
+        <option value="{{ d }}">{{ d }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Month -->
+    <select id="birth_month" name="birth_month" required>
+      <option value="">Month</option>
+      {% set months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ] %}
+      {% for m in months %}
+        <option value="{{ loop.index }}">{{ m }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Year -->
+    <select id="birth_year" name="birth_year" required>
+      <option value="">Year</option>
+      {% for y in range(1900, current_year+1) %}
+        <option value="{{ y }}">{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Auto Age Display -->
+  <div id="age-display" style="margin-top:8px; font-weight:bold; color:#2c3e50;">
+    Age: —
+  </div>
+</div>
+
+
+
+                <div class="form-group">
+                    <label for="marital_status">Marital Status *</label>
+                    <select id="marital_status" name="marital_status" required>
+                        <option value="">Select Status</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Widowed">Widowed</option>
+                        <option value="Divorced">Divorced</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmation">Confirmation *</label>
+                    <select id="confirmation" name="confirmation" required>
+                        <option value="">Select Status</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="baptism">Baptism *</label>
+                    <select id="baptism" name="baptism" required>
+                        <option value="">Select Status</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="residence">Residence *</label>
+                    <input type="text" id="residence" name="residence" required placeholder="Enter residence">
+                </div>
+
+<div class="form-group">
+  <label for="occupation_status">Occupation Status</label>
+  <select id="occupation_status" name="occupation_status">
+    <option value="" selected>Select Status</option>
+    <option value="student">Student</option>
+    <option value="employed">Employed</option>
+    <option value="unemployed">Unemployed</option>
+  </select>
+</div>
+
+<div class="form-group">
+  <label for="institution_type">Institution Type</label>
+  <select id="institution_type" name="institution_type" disabled>
+    <option value="" selected>Select Type</option>
+    <option value="secondary">Secondary</option>
+    <option value="college">College</option>
+    <option value="university">University</option>
+  </select>
+</div>
+
+
+                <div class="form-group full-width">
+                    <label for="bio">Bio (Optional)</label>
+                    <textarea id="bio" name="bio" rows="3" maxlength="500" placeholder="Tell us about yourself..."></textarea>
+                    <div class="char-count"><span id="bioCount">0</span>/500 characters</div>
+                </div>
+            </div>
+        </div>
+<!-- Church Affiliation Section -->
+<div class="form-section">
+    <h3>⛪ Church Affiliation</h3>
+    <div class="form-grid">
+        <!-- Archdiocese -->
+        <div class="form-group">
+            <label for="archdiocese">Archdiocese *</label>
+            <select id="archdiocese" name="archdiocese" required>
+                <option value="">Select Archdiocese</option>
+                <option value="Nairobi">Nairobi</option>
+                <option value="Mombasa">Mombasa</option>
+                <option value="Kisumu">Kisumu</option>
+                <option value="Nyeri">Nyeri</option>
+                <option value="Eldoret">Eldoret</option>
+            </select>
+        </div>
+
+        <!-- Diocese -->
+        <div class="form-group">
+            <label for="diocese">Diocese *</label>
+            <select id="diocese" name="diocese" required disabled>
+                <option value="">Select Diocese</option>
+                <!-- Will be populated dynamically -->
+            </select>
+        </div>
+
+        <!-- Denary -->
+        <div class="form-group">
+            <label for="denary">Denary *</label>
+            <select id="denary" name="denary" required disabled>
+                <option value="">Select Denary</option>
+                <!-- Will be populated dynamically -->
+            </select>
+        </div>
+
+        <!-- Parish -->
+        <div class="form-group">
+            <label for="parish">Parish *</label>
+            <select id="parish" name="parish" required disabled>
+                <option value="">Select Parish</option>
+                <!-- Will be populated dynamically -->
+            </select>
+        </div>
+
+        <!-- Local Church -->
+        <div class="form-group">
+            <label for="local_church">Local Church *</label>
+            <select id="local_church" name="local_church" required disabled>
+                <option value="">Select Local Church</option>
+                <!-- Will be populated dynamically -->
+            </select>
+        </div>
+    </div>
+</div>
+
+        <!-- Leadership Roles -->
+        <div class="form-section">
+            <h3>👑 Leadership Role</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="level">Organization Level *</label>
+                    <select id="level" name="level" required>
+                        <option value="">Select Level</option>
+                        <option value="member">Member</option>
+                        <option value="local">Local Church</option>
+                        <option value="parish">Parish</option>
+                        <option value="denary">Denary</option>
+                        <option value="diocese">Diocese</option>
+                        <option value="archdiocese">Archdiocese</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Specific Role *</label>
+                    <select id="role" name="role" required disabled>
+                        <option value="">Select Level First</option>
+                    </select>
+                </div>
+            </div>
+            <div class="role-info">
+                <p id="role-description">Select a level to see available roles</p>
+            </div>
+        </div>
+
+        <!-- Account Security -->
+        <div class="form-section">
+            <h3>🔒 Account Security</h3>
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" required minlength="6" placeholder="Create a password">
+                    <span class="toggle-password" onclick="togglePasswordVisibility()">👁️</span>
+                </div>
+                <small class="password-hint">Minimum 6 characters</small>
             </div>
         </div>
 
@@ -243,118 +269,347 @@
 </div>
 
 <script>
-// Character counter for bio
-document.getElementById('bio').addEventListener('input', function() {
-    const charCount = this.value.length;
-    const counter = document.getElementById('bioCount');
-    counter.textContent = charCount;
-    
-    if (charCount > 450) {
-        counter.style.color = '#dc3545';
-    } else if (charCount > 400) {
-        counter.style.color = '#ffc107';
-    } else {
-        counter.style.color = '#28a745';
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setupChurchHierarchy();
+    setupRoleManagement();
+    setupOccupationLogic();
+    setupBioCounter();
+});
+// Kenyan Ecclesiastical Hierarchy Data (nested for dropdown population)
+const kenyaChurchHierarchy = {
+  "Nairobi": {
+    "Dioceses": {
+      "Nairobi Diocese": {
+        "Denaries": {
+          "Nairobi Eastern": {
+            "Parishes": {
+              "Divine Word Parish, Kayole": ["St. Mary Local Church • Kayole", "Christ the King Local Church • Kayole"],
+              "St. Joseph Parish, Ruai": ["St. Joseph Local Church • Ruai"],
+              "Holy Family Parish, Utawala": ["Holy Family Local Church • Utawala"]
+            }
+          },
+          "Nairobi Western": {
+            "Parishes": {
+              // Placeholder
+              "Example Parish A, Western": ["Local Church X", "Local Church Y"]
+            }
+          },
+          "Nairobi Central": { "Parishes": {} },
+          "Makadara": { "Parishes": {} },
+          "Ruaraka": { "Parishes": {} },
+          "Ruiru": { "Parishes": {} }
+        }
+      },
+      "Ngong Diocese": {
+        "Denaries": {
+          "Narok": {
+            "Parishes": {
+              "St. John the Baptist, Narok": ["St. John Local Church • Narok"]
+            }
+          },
+          "Kiserian": { "Parishes": {} },
+          "Kajiado": { "Parishes": {} },
+          "Kilgoris": { "Parishes": {} },
+          "Ololulunga": { "Parishes": {} },
+          "Oloitokitok": { "Parishes": {} },
+          "Ngong": { "Parishes": {} }
+        }
+      },
+      "Kitui Diocese": { "Denaries": {} },
+      "Machakos Diocese": { "Denaries": {} },
+      "Murang’a Diocese": { "Denaries": {} }
     }
+  },
+  "Mombasa": {
+    "Dioceses": {
+      "Mombasa Diocese": {
+        "Denaries": {
+          "Mombasa Central": { "Parishes": {} },
+          "Mombasa West": { "Parishes": {} },
+          "Kwale": { "Parishes": {} },
+          "Kilifi": { "Parishes": {} },
+          "Taita Taveta": { "Parishes": {} }
+        }
+      },
+      "Malindi Diocese": { "Denaries": {} },
+      "Garissa Diocese": { "Denaries": {} }
+    }
+  },
+  "Kisumu": {
+    "Dioceses": {
+      "Kisumu Diocese": {
+        "Denaries": {
+          "Ahero": {
+            "Parishes": {
+              "Ahero Parish": ["Ahero Local Church"],
+              "Awasi Parish": ["Awasi Local Church"]
+            }
+          }
+          // Add other deaneries
+        }
+      },
+      "Bungoma Diocese": { "Denaries": {} },
+      "Eldoret Diocese": { "Denaries": {} },
+      "Homa Bay Diocese": { "Denaries": {} },
+      "Kakamega Diocese": { "Denaries": {} },
+      "Kisii Diocese": { "Denaries": {} },
+      "Kitale Diocese": { "Denaries": {} },
+      "Lodwar Diocese": { "Denaries": {} }
+    }
+  },
+  "Nyeri": {
+    "Dioceses": {
+      "Nyeri Diocese": {
+        "Denaries": {
+          "Tetu": {
+            "Parishes": {
+              "Kagumo Parish": ["St. Peter’s Kagumo", "St. Paul’s Kagumo"],
+              "Wamagana Parish": ["St. Mark’s Wamagana"],
+              "Kangaita Parish": ["St Paul Kiawaithanji", "St Peter Mutathiini", "St Mark Gichira", "St Teresa Gondo", "St Lwanga Mungaria", "St luke Gichira", "St Joseph Kangaita"]
+            }
+          },
+          "Othaya": {
+            "Parishes": {
+              "Karima Parish": ["St. Mary’s Karima"],
+              "Gatuyaini Parish": ["St. Joseph’s Gatuyaini"]
+            }
+          },
+          "Nyeri Municipality": { "Parishes": {} },
+          "Meru": { "Parishes": {} },
+          "Isiolo": { "Parishes": {} },
+          "Maralal": { "Parishes": {} },
+          "Marsabit": { "Parishes": {} },
+          "Embu": { "Parishes": {} }
+        }
+      },
+      "Meru Diocese": { "Denaries": {} },
+      "Maralal Diocese": { "Denaries": {} },
+      "Marsabit Diocese": { "Denaries": {} },
+      "Embu Diocese": { "Denaries": {} },
+      "Murang’a Diocese": { "Denaries": {} }
+    }
+  }
+};
+document.addEventListener('DOMContentLoaded', () => {
+  const hierarchy = kenyaChurchHierarchy;
+
+  const archdioceseEl = document.getElementById('archdiocese');
+  const dioceseEl = document.getElementById('diocese');
+  const denaryEl = document.getElementById('denary');
+  const parishEl = document.getElementById('parish');
+  const localChurchEl = document.getElementById('local_church');
+
+  function reset(dropdown, placeholder) {
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    dropdown.disabled = true;
+  }
+
+  function populate(dropdown, items, placeholder) {
+    reset(dropdown, placeholder);
+    items.forEach(item => dropdown.add(new Option(item, item)));
+    dropdown.disabled = false;
+  }
+
+  // Archdiocese change
+  archdioceseEl.addEventListener('change', () => {
+    reset(dioceseEl, "Select Diocese");
+    reset(denaryEl, "Select Denary");
+    reset(parishEl, "Select Parish");
+    reset(localChurchEl, "Select Local Church");
+
+    const arch = archdioceseEl.value;
+    if (arch && hierarchy[arch]) {
+      populate(dioceseEl, Object.keys(hierarchy[arch].Dioceses), "Select Diocese");
+    }
+  });
+
+  // Diocese change
+  dioceseEl.addEventListener('change', () => {
+    reset(denaryEl, "Select Denary");
+    reset(parishEl, "Select Parish");
+    reset(localChurchEl, "Select Local Church");
+
+    const arch = archdioceseEl.value;
+    const dio = dioceseEl.value;
+    if (hierarchy[arch]?.Dioceses[dio]?.Denaries) {
+      populate(denaryEl, Object.keys(hierarchy[arch].Dioceses[dio].Denaries), "Select Denary");
+    }
+  });
+
+  // Denary change
+  denaryEl.addEventListener('change', () => {
+    reset(parishEl, "Select Parish");
+    reset(localChurchEl, "Select Local Church");
+
+    const arch = archdioceseEl.value;
+    const dio = dioceseEl.value;
+    const den = denaryEl.value;
+    const parishes = hierarchy[arch]?.Dioceses[dio]?.Denaries[den]?.Parishes;
+    if (parishes) {
+      populate(parishEl, Object.keys(parishes), "Select Parish");
+    }
+  });
+
+  // Parish change
+  parishEl.addEventListener('change', () => {
+    reset(localChurchEl, "Select Local Church");
+
+    const arch = archdioceseEl.value;
+    const dio = dioceseEl.value;
+    const den = denaryEl.value;
+    const par = parishEl.value;
+    const churches = hierarchy[arch]?.Dioceses[dio]?.Denaries[den]?.Parishes[par];
+    if (churches) {
+      populate(localChurchEl, churches, "Select Local Church");
+    }
+  });
 });
 
-// Update roles based on level selection
-function updateRoles() {
-    const level = document.getElementById('level').value;
+// 2. Role Management
+function setupRoleManagement() {
+    const levelSelect = document.getElementById('level');
     const roleSelect = document.getElementById('role');
     const description = document.getElementById('role-description');
-    
-    // Clear existing options
-    roleSelect.innerHTML = '';
-    
+
+    // Define roles for each church level
     const roles = {
-        'member': {
+        member: {
             options: ['Member'],
-            description: 'Regular youth member with access to basic features'
+            description: 'Regular member with basic access.'
         },
-        'local': {
-            options: ['Secretary', 'Treasurer','Matron','Patron','Organising Secretary', 'Chairman'],
-            description: 'Leadership roles at the local church level'
+        local: {
+            options: ['Secretary', 'Treasurer', 'Chairman', 'Organizing Secretary', 'Patron', 'Matron'],
+            description: 'Local church leadership roles.'
         },
-        'parish': {
-            options: ['Secretary', 'Treasurer','Organising Secretary','Patron','Matron', 'Chairman'],
-            description: 'Leadership roles managing multiple local churches'
+        parish: {
+            options: ['Secretary', 'Treasurer', 'Chairman', 'Organizing Secretary', 'Patron', 'Matron'],
+            description: 'Parish-level leadership roles.'
         },
-        'denary': {
-            options: ['Secretary', 'Treasurer','Organising Secretary','Matron','Patron','Chaplain', 'Chairman'],
-            description: 'Leadership roles managing multiple parishes'
+        denary: {
+            options: ['Secretary', 'Treasurer', 'Chairman', 'Organizing Secretary', 'Patron', 'Matron', 'Chaplain'],
+            description: 'Denary-level leadership roles.'
         },
-        'diocese': {
-            options: ['Secretary', 'Treasurer','Organising Secretary','Matron','Patron','Chaplain', 'Chairman'],
-            description: 'Top-level leadership roles managing the entire diocese'
+        diocese: {
+            options: ['Secretary', 'Treasurer', 'Chairman', 'Organizing Secretary', 'Patron', 'Matron', 'Chaplain'],
+            description: 'Diocese-level leadership roles.'
+        },
+        archdiocese: {
+            options: ['Secretary', 'Treasurer', 'Chairman', 'Organizing Secretary', 'Patron', 'Matron', 'Chaplain'],
+            description: 'Archdiocese-level leadership roles.'
         }
     };
-    
-    if (level && roles[level]) {
-        roles[level].options.forEach(role => {
-            const option = document.createElement('option');
-            option.value = role;
-            option.textContent = role;
-            roleSelect.appendChild(option);
-        });
-        description.textContent = roles[level].description;
-        description.style.color = '#007bff';
-    } else {
-        const option = document.createElement('option');
-        option.value = '';
-        option.textContent = 'First select a level';
-        roleSelect.appendChild(option);
-        description.textContent = 'Select a level to see available roles';
-        description.style.color = '#666';
-    }
+
+    // On level change → update role dropdown + description
+    levelSelect.addEventListener('change', function() {
+        roleSelect.innerHTML = '<option value="">Select Role</option>';
+        roleSelect.disabled = !this.value;
+
+        if (this.value && roles[this.value]) {
+            roles[this.value].options.forEach(role => {
+                roleSelect.add(new Option(role, role));
+            });
+            description.textContent = roles[this.value].description;
+            description.style.color = '#007bff'; // blue highlight
+        } else {
+            description.textContent = 'Select a level to see available roles';
+            description.style.color = '#666';
+        }
+    });
 }
 
-// Form validation
-document.querySelector('.register-form').addEventListener('submit', function(e) {
-    const requiredFields = ['full_name', 'age', 'diocese', 'denary', 'parish', 'local_church', 'level', 'role', 'password'];
+// Initialize after DOM is loaded
+document.addEventListener('DOMContentLoaded', setupRoleManagement);
+
+//3
+  const occupationStatus = document.getElementById("occupation_status");
+  const institutionType = document.getElementById("institution_type");
+
+  occupationStatus.addEventListener("change", function () {
+    if (this.value === "student") {
+      institutionType.disabled = false;
+    } else {
+      institutionType.disabled = true;
+      institutionType.value = ""; // Reset selection when disabled
+    }
+  });
+
+// 4. Bio Character Counter
+function setupBioCounter() {
+    const bioField = document.getElementById('bio');
+    const counter = document.getElementById('bioCount');
     
+    bioField.addEventListener('input', function() {
+        const charCount = this.value.length;
+        counter.textContent = charCount;
+        counter.style.color = charCount > 450 ? '#dc3545' : charCount > 400 ? '#ffc107' : '#28a745';
+    });
+}
+
+// 5. Password Visibility Toggle
+function togglePasswordVisibility() {
+    const passwordField = document.getElementById('password');
+    passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+}
+
+//6
+function calculateAge() {
+  const day = document.getElementById("birth_day").value;
+  const month = document.getElementById("birth_month").value;
+  const year = document.getElementById("birth_year").value;
+
+  if (day && month && year) {
+    const dob = new Date(year, month - 1, day);
+    const today = new Date();
+
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+
+    document.getElementById("age-display").innerText = "Age: " + age;
+  }
+}
+
+// Attach event listeners
+document.getElementById("birth_day").addEventListener("change", calculateAge);
+document.getElementById("birth_month").addEventListener("change", calculateAge);
+document.getElementById("birth_year").addEventListener("change", calculateAge);
+
+// Form Validation
+document.querySelector('.register-form').addEventListener('submit', function(e) {
+    const requiredFields = [
+        'full_name', 'gender', 'birth_day', 'birth_month', 'birth_year',
+        'marital_status', 'confirmation', 'baptism', 'residence',
+        'archdiocese', 'diocese', 'denary', 'parish', 'local_church',
+        'level', 'role', 'password'
+    ];
+
     for (const field of requiredFields) {
         const element = document.getElementById(field);
-        if (!element.value.trim()) {
+        if (!element?.value.trim()) {
             e.preventDefault();
             alert(`Please fill in the ${field.replace('_', ' ')} field`);
-            element.focus();
+            element?.focus();
             return;
         }
     }
-    
+
     const age = parseInt(document.getElementById('age').value);
     if (age < 13 || age > 100) {
         e.preventDefault();
         alert('Age must be between 13 and 100');
-        document.getElementById('age').focus();
         return;
     }
-    
+
     const password = document.getElementById('password').value;
     if (password.length < 6) {
         e.preventDefault();
-        alert('Password must be at least 6 characters long');
-        document.getElementById('password').focus();
-        return;
-    }
-    
-    const email = document.getElementById('email').value;
-    if (email && !isValidEmail(email)) {
-        e.preventDefault();
-        alert('Please enter a valid email address');
-        document.getElementById('email').focus();
+        alert('Password must be at least 6 characters');
         return;
     }
 });
-
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// Initialize roles on page load
-updateRoles();
 </script>
 
 <style>
@@ -439,6 +694,7 @@ updateRoles();
 .form-group {
     display: flex;
     flex-direction: column;
+    margin-bottom: 15px;
 }
 
 .form-group.full-width {
@@ -451,9 +707,13 @@ updateRoles();
     color: #333;
 }
 
-.form-group input,
-.form-group textarea,
-.form-group select {
+.dob-fields {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+input, select, textarea {
     padding: 12px;
     border: 2px solid #e9ecef;
     border-radius: 8px;
@@ -461,9 +721,14 @@ updateRoles();
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
+select {
+    appearance: none;
+    background: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>") 
+                no-repeat 98% 50%;
+    padding-right: 30px;
+}
+
+input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
@@ -474,6 +739,19 @@ updateRoles();
     margin-top: 5px;
     font-size: 0.9em;
     color: #666;
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    user-select: none;
 }
 
 .password-hint {
@@ -518,6 +796,7 @@ updateRoles();
     justify-content: center;
     gap: 8px;
     font-size: 1.1em;
+    width: 100%;
 }
 
 .btn-primary {
@@ -543,19 +822,6 @@ updateRoles();
     background: #f8f9fa;
 }
 
-/* Validation styles */
-.form-group input:invalid {
-    border-color: #dc3545;
-}
-
-.form-group input:valid {
-    border-color: #28a745;
-}
-
-.form-group input:required {
-    border-left-width: 4px;
-}
-
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .register-container {
@@ -565,99 +831,22 @@ updateRoles();
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
+
+    .dob-fields {
+        grid-template-columns: 1fr;
+    }
+
     .form-sections {
         padding: 20px;
     }
-    
+
     .register-header h1 {
         font-size: 2em;
     }
-    
+
     .form-actions {
         padding: 15px 20px;
     }
 }
-
-/* Animation for form sections */
-.form-section {
-    animation: fadeInUp 0.5s ease-out;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Loading state */
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Success feedback */
-.form-success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
 </style>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f0f0f0;
-            padding: 20px;
-        }
-        form {
-            max-width: 600px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            margin: auto;
-            box-shadow: 0 0 10px #ccc;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #aaa;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #0a84ff;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #006edc;
-        }
-        .password-wrapper {
-            position: relative;
-        }
-        .toggle-password {
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
-            cursor: pointer;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-    </style>
-
 {% endblock %}
