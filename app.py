@@ -32,7 +32,6 @@ from flask_wtf import FlaskForm
 from flask_mail import Mail, Message
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
-from supabase import create_client, Client
 
 # Local Imports
 from email_service import init_mail, send_welcome_email
