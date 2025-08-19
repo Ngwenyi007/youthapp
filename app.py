@@ -1,4 +1,3 @@
-# Standard Library Imports
 import os
 import re
 import uuid
@@ -33,36 +32,34 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
 
-POST_FILE = 'posts.json'
-LEVEL_MAP = {
-    'local': ('local_church', 'local_church'),
-    'parish': ('parish', 'parish'),
-    'denary': ('denary', 'denary'),
-    'diocese': ('diocese', 'diocese'),
-    'archdiocese': ('archdiocese', 'archdiocese')
-}
-# Create mail instance without app context
-
-# Load from environment for security
+# Load environment variables from a .env file.
+# This is a common practice for managing configuration secrets.
 load_dotenv()
 
+# --- Flask App Initialization ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ['SECRET_KEY']  # Loads from environment
+
+# --- App Configuration ---
+# Loads from environment variables for security.
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+port = int(os.environ.get("PORT", 5000))
 
-csrf = CSRFProtect(app)
-# Initialize SocketIO for real-time features
+# --- Mail Configuration ---
+# All mail credentials should be loaded from environment variables for production.
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your_email@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your_password')
+
+# --- Extension and Service Initialization ---
 csrf = CSRFProtect(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
-port = int(os.environ.get("PORT", 5000))  # Render injects PORT
-mail = Mail()
+mail = Mail(app)  # Correctly initialize Mail with the app instance.
 
-# Create upload directories
-os.makedirs('uploads/profiles', exist_ok=True)
-os.makedirs('uploads/documents', exist_ok=True)
-os.makedirs('uploads/events', exist_ok=True)
-
+# --- File Paths and Directory Setup ---
 USER_FILE = 'users.json'
 POST_FILE = 'posts.json'
 COMMENT_FILE = 'comments.json'
@@ -71,16 +68,23 @@ NOTIFICATION_FILE = 'notifications.json'
 MESSAGE_FILE = 'messages.json'
 PRAYER_FILE = 'prayers.json'
 ATTENDANCE_FILE = 'attendance.json'
-load_dotenv()  # Loads from .env locally (ignored on Render)
 
+# Create upload directories and set upload folder path
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'}
-username = "code"
-# Upload folder configuration
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
-os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'documents'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'profiles'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'documents'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'events'), exist_ok=True)
-# 🧠 Automatically adds "organising secretary" to all levels
+
+# --- Application Data and Role Definitions ---
+username = "code"
+LEVEL_MAP = {
+    'local': ('local_church', 'local_church'),
+    'parish': ('parish', 'parish'),
+    'denary': ('denary', 'denary'),
+    'diocese': ('diocese', 'diocese'),
+    'archdiocese': ('archdiocese', 'archdiocese')
+}
 role_definitions = {
     'Local': ['member', 'chairman', 'secretary', 'organising secretary', 'chaplain', 'matron', 'patron', 'treasurer'],
     'Parish': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
@@ -88,17 +92,6 @@ role_definitions = {
     'Diocese': ['chaplain', 'chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer'],
     'Archdiocese': ['chairman', 'secretary', 'organising secretary', 'matron', 'patron', 'treasurer']
 }
-
-# Configure your mail settings
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your_password'
-
-mail = Mail()
-mail.init_app(app)
-mail = None  # Will be initialized later
 
 class LoginForm(FlaskForm):
     username = StringField('Member Code', validators=[DataRequired()])
