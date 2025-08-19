@@ -1,39 +1,42 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, session, flash, jsonify, send_from_directory
-from flask_socketio import SocketIO, emit, join_room, leave_room
-import uuid, json, os, re
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta, date
-import base64
-from PIL import Image
-import io
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from datetime import datetime
-from dateutil.relativedelta import relativedelta  # Usisahau hii
+# Standard Library Imports
+import os
+import re
+import uuid
+import json
 import random
 import string
-from functools import wraps
 import fcntl
-from supabase import create_client, Client
-import os
-from dotenv import load_dotenv  # Add this at the top
-import os
-from supabase import create_client
-from dotenv import load_dotenv
-from flask_wtf.csrf import CSRFProtect
-from flask_mail import Mail, Message
-from flask import current_app
-from threading import Thread
-from email_service import init_mail, send_welcome_email
+import base64
+import io
 import smtplib
+from datetime import datetime, timedelta, date
+from functools import wraps
+from threading import Thread
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+# Third-party Imports
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from PIL import Image
+from dateutil.relativedelta import relativedelta
+from dotenv import load_dotenv
+from flask import (
+    Flask, render_template, send_from_directory, request,
+    redirect, session, flash, jsonify, current_app,
+    url_for
+)
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
+from flask_mail import Mail, Message
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
-from flask import Flask, render_template, redirect, url_for, session, flash, current_app
+from supabase import create_client, Client
 import africastalking
+
+# Local Imports
+from email_service import init_mail, send_welcome_email
 
 # Initialize Africa's Talking SDK
 
