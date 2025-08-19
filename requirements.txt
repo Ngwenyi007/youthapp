@@ -21,3 +21,4 @@ eventlet==0.35.1
 psycopg2-binary==2.9.9
 requests==2.32.3
 python-dateutil>=2.8.2
+Flask-WTF==1.2.1
