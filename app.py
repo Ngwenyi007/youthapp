@@ -905,6 +905,23 @@ def register():
         # ✅ Save user
         data.append(user)
         save_data(USER_FILE, data)
+
+        # ✅ Auto-login: populate session so the dashboard redirect works
+        session.update({
+            'username': user['code'],
+            'code': user['code'],
+            'user': {
+                'code': user['code'],
+                'full_name': user['full_name'],
+                'rank': user['rank'],
+                'local_church': user['local_church'],
+                'parish': user['parish'],
+                'denary': user['denary'],
+                'diocese': user['diocese']
+            }
+        })
+        session.permanent = True
+
         # ✅ Send email
         try:
             send_welcome_email(
@@ -920,31 +937,6 @@ def register():
         return redirect(url_for('dashboard'))
 
     return render_template('register.html', current_year=datetime.now().year)
-    for p in visible_posts:
-        p['time_ago'] = format_timestamp(p['timestamp'])
-        p['comments'] = comments.get(p['id'], [])
-        p['like_count'] = len(p.get('likes', []))
-        p['user_liked'] = username in p.get('likes', [])
-    # Get upcoming events
-    upcoming_events = []
-    for event in events.get('events', []):
-        if is_within_boundary(event):
-            event_date = datetime.fromisoformat(event['start_date'])
-            if event_date >= datetime.now():
-                upcoming_events.append(event)
-    
-    upcoming_events.sort(key=lambda e: e['start_date'])
-    upcoming_events = upcoming_events[:5]  # Show next 5 events
-    
-    # Get unread notifications
-    user_notifications = notifications.get(username, [])
-    unread_count = len([n for n in user_notifications if not n['read']])
-
-    return render_template('dashboard.html', 
-                         user=user, 
-                         posts=visible_posts[:10], 
-                         upcoming_events=upcoming_events,
-                         unread_notifications=unread_count)
 
 
 @app.route('/add_comment/<post_id>', methods=['POST'])
